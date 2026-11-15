@@ -1,0 +1,1 @@
+(function(){document.getElementById('clear-local-data').addEventListener('click',()=>{try{for(const key of Object.keys(localStorage))if(key.startsWith('messiah-'))localStorage.removeItem(key);document.getElementById('clear-data-status').textContent='已清除本浏览器的本站收藏和阅读位置。没有删除服务器文件。';}catch{document.getElementById('clear-data-status').textContent='当前浏览器不允许访问本地存储。';}});})();
