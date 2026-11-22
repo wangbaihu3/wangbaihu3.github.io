@@ -16,9 +16,9 @@ https.ng 用 HTTPS，103.143.81.181 和 85.189.89.208 的文件入口是 HTTP �
 
 四、已经预留的真正在线 TXT 桥接接口
 若将来在 https.ng 的真实 HTTPS 同源服务端提供：
-GET /api/txt/capabilities
+GET /api/TXT/capabilities
 返回：{"service":"messiah-txt-bridge-v1","online_read":true}
-GET /api/txt/read?path=<百分号编码的相对TXT路径>
+GET /api/TXT/read?path=<百分号编码的相对TXT路径>
 返回 UTF-8 TXT 正文字节，须与 TXT/index.json 的路径、字节数、SHA-256 一致。
 网页在打开TXT目录时会尝试能力检测；只有接口返回有效身份和可用状态，才会真正取正文。不可信第三方代理不允许。服务端必须限制路径只能位于“改革宗心灵辅导TXT电子书”根目录之下；拒绝 ..、反斜杠、符号链接逃逸、非TXT、超大文件及外站URL；启用HTTPS、超时、限流和缓存，不得传送私有账户凭据。
 
