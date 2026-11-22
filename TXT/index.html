@@ -18,13 +18,13 @@
 <header><div class="shell masthead"><a class="brand" href="/"><strong>弥赛亚</strong><span>改革宗神学翻译网</span></a><nav aria-label="主导航"><a href="/">首页</a><a href="/navigation/">分类导航</a><a href="/bible/">圣经阅读</a><a href="/txt/" aria-current="page">TXT听读</a><a href="/calendar/">双历对照</a><a href="/#software-downloads">软件下载</a></nav></div></header>
 <main class="shell" id="main">
 <section class="txt-head"><p class="eyebrow">原目录保全 · 递归分类 · 逐段朗读 · 全文检索</p><h1>TXT 电子书阅读与连续朗读</h1><p>阅读原文 TXT 文件，点击任意段落即可从该处朗读。可按单段、本篇、当前文件夹、分类、搜索列表或全库连续播放，并选择是否循环；声音取决于浏览器实际提供的语音服务。</p><p class="subtle">软件与圣经阅读保持独立。公开 TXT 不代表本站认可所有内容；上传公开资源前请核查著作权和隐私。</p></section>
-<section class="panel" id="txt-online-catalog"><h2>在线 TXT 网盘书库（轻量网站版）</h2>
-<p>本站只保存 1,360 本书的书名、路径与分类索引，<strong>不再上传 226 MB 的 TXT 正文</strong>。</p>
+<section class="panel" id="txt-online-catalog"><h2>网站 TXT 全文书库（全部 1,360 份）</h2>
+<p>本站现已完整提供 1,360 份 TXT 正文、目录与全文搜索索引，<strong>可以直接在本网页点击书名阅读或朗读，无需先从网盘下载</strong>。</p>
 <p><a class="button" href="http://85.189.89.208/#drive?path=%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F%E6%94%B9%E9%9D%A9%E5%AE%97%E5%BF%83%E7%81%B5%E8%BE%85%E5%AF%BCTXT%E7%94%B5%E5%AD%90%E4%B9%A6" rel="noopener noreferrer" target="_blank">打开在线网盘的 TXT 电子书目录</a></p>
-<p>由于本站是 HTTPS，而你提供的网盘地址是 HTTP，浏览器安全限制及跨域权限使本站不能直接抓取那边的全部书籍。现在可以在本网搜索书名和分类；要朗读正文，请在网盘下载所需 TXT 文件夹，再用下方“选择本机 TXT 文件夹”导入（包括多层子目录）。</p>
+<p>本站的全部 TXT 正文已部署在同源目录，可以在线打开并朗读，也能按分类和全文搜索。外部网盘作为备用下载地址；如需阅读电脑上尚未发布的 TXT，仍可使用“选择本机 TXT 文件夹”递归导入。</p>
 </section>
 <section class="panel txt-import" aria-labelledby="txt-import-title"><h2 id="txt-import-title">导入与更新文件</h2>
-<div class="txt-import-grid"><div><strong>网站 TXT 文件夹</strong><p>本轻量包仅提供云端目录索引，TXT 正文保存在外部网盘。请从上方网盘下载所需文件夹并在右侧导入；将来若自行部署 TXT 正文，也可按索引工具重新建立本地目录。</p><p id="txt-index-summary" class="subtle" role="status">正在读取网站 TXT 目录……</p></div><div><strong>直接阅读本机文件夹</strong><p>无需上传或安装程序：选择电脑上的某个文件夹，连同其所有子文件夹中的 TXT 一起读取和分类。文件只在当前浏览器页面读取，不上传本站。</p><label class="txt-folder-picker">选择本机 TXT 文件夹<input id="txt-folder-picker" type="file" multiple webkitdirectory directory accept=".txt,text/plain"></label><button type="button" class="secondary" id="txt-clear-local">清除本机文件列表</button></div></div>
+<div class="txt-import-grid"><div><strong>网站 TXT 文件夹</strong><p>本站提供全部 1,360 份 TXT 正文。点击左侧书名即可在线阅读、逐段朗读及循环播放。新增书籍时请将 TXT 放入对应文件夹，并重新生成索引后上传。</p><p id="txt-index-summary" class="subtle" role="status">正在读取网站 TXT 目录……</p></div><div><strong>直接阅读本机文件夹</strong><p>无需上传或安装程序：选择电脑上的某个文件夹，连同其所有子文件夹中的 TXT 一起读取和分类。文件只在当前浏览器页面读取，不上传本站。</p><label class="txt-folder-picker">选择本机 TXT 文件夹<input id="txt-folder-picker" type="file" multiple webkitdirectory directory accept=".txt,text/plain"></label><button type="button" class="secondary" id="txt-clear-local">清除本机文件列表</button></div></div>
 <p class="subtle">静态网站不能自行列举服务器任意新文件；包内提供目录更新脚本和自动索引工作流。直接选择本机文件夹则不需重新建索引。</p>
 </section>
 <div class="txt-layout">
@@ -65,7 +65,7 @@
 <article class="txt-paper" id="txt-paper" aria-label="TXT电子书正文"><p class="txt-placeholder">选择一份 TXT 文件后，这里会完整显示内容。点击任意段落即可从该段开始朗读。</p></article>
 </section>
 </div></div>
-<section class="notice"><h2>使用说明与兼容边界</h2><p>本网保留全部云端书名与多层分类，但远端 HTTP 网盘没有可验证的跨站读取接口；本网不能直接全文搜索或朗读网盘文件。选择本机 TXT 文件夹后才可全文检索、点击段落朗读、跨文件连续与循环播放。</p><p>网页不把 TXT 传到本站服务器，除非你主动将文件作为网站公开资源上传。网站的朗读使用浏览器提供的声音；暂停后继续可能重读当前短句，设备休眠、锁屏、浏览器节流及网络声音服务故障都可能打断长时间连续播放。</p><p>完整建站说明见 <a href="/TXT/使用说明.html">TXT 文件夹使用说明</a>；不要把网站文件夹的更新误认为圣经审校 Word 母稿已更新。</p></section>
+<section class="notice"><h2>使用说明与兼容边界</h2><p>本完整版包含 1,360 份同源 TXT 正文及完整搜索索引，可在线检索正文、点击段落朗读、跨文件连续和循环。外部 HTTP 网盘是备用下载入口，并非在线朗读的必需依赖。也可以选择本机 TXT 文件夹阅读尚未上传的私有文件。</p><p>网页不把 TXT 传到本站服务器，除非你主动将文件作为网站公开资源上传。网站的朗读使用浏览器提供的声音；暂停后继续可能重读当前短句，设备休眠、锁屏、浏览器节流及网络声音服务故障都可能打断长时间连续播放。</p><p>完整建站说明见 <a href="/TXT/使用说明.html">TXT 文件夹使用说明</a>；不要把网站文件夹的更新误认为圣经审校 Word 母稿已更新。</p></section>
 <noscript><p>TXT目录搜索和朗读需要 JavaScript。若无法运行脚本，请启用浏览器脚本后重试。</p></noscript>
 </main>
 <footer class="shell"><p><strong>弥赛亚改革宗神学翻译网</strong> · 以圣经为准绳，注重原文、译文与出处。</p><p>网站资源仅作索引和阅读；有关文本的学术或神学判断应核对原资料。</p><a href="/about/">版本、来源与使用说明</a> · <a href="mailto:gqdd056@gmail.com">联系方式</a><p class="subtle">TXT阅读与连续朗读版 · <a href="/about/#release-check">核对版本</a></p></footer>
