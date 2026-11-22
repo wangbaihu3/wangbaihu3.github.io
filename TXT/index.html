@@ -9,11 +9,11 @@
 <title>TXT 阅读与连续朗读｜弥赛亚改革宗神学翻译网</title>
 <meta name="description" content="递归浏览TXT分类目录；搜索书名与正文，逐段听读、分类连续与循环朗读，深色与护眼主题。">
 <link rel="stylesheet" href="/assets/app.css" integrity="sha384-XSWEdFrNhY+dFgkxzFaEPu0HpGumUc2jCooQoK4NHnwwlL7FQ9jMoq7ipflt/gr0">
-<link rel="stylesheet" href="/assets/txt-reader.css" integrity="sha384-00v7DAKS1ODWOaINs0qzld2WaOltIhUYgfnUdLZM0E9Fxom1chIgZI4kGg4Vlb9V">
+<link rel="stylesheet" href="/assets/txt-reader.css?v=20261123-r6-v181-real-file-api" integrity="sha384-twGnHWDSyImC8VTVfzxqLj0b0pdATqky3SUn2ueRdUJUbLXxjWPUIviaSIDvABtr">
 <script defer src="/assets/voice-policy.js" integrity="sha384-apiCf+VG1nfMNHtaBMA5AzVswE6GW5TRmXfDcOg16HKkctX8LJUmg7v5dAMNZFG5"></script><script defer src="/assets/pronunciation-rules.js" integrity="sha384-YW8ybXzuddQ6G9GbUggGmbfXdqLokrPUw0RUpDQ8f7hr4rm4YB4ZPwYtcpoXZkjh"></script>
 <script defer src="/assets/tts.js" integrity="sha384-nKYDp5DENqwHDwzGGKGyf2qHAjQ91P/hrJp4wjVjX/3p9j6KlicubC9kRyxcbpxD"></script>
-<script defer src="/assets/runtime.js" integrity="sha384-Hhqm0IZ26nyuEQibWFWj+HL2tuXdhpac9D4oZe3ahjnqS4QoH0EJCSfqX7usS/hC"></script>
-<script defer src="/assets/txt-reader.js" integrity="sha384-YPiuBmYeXY7JZYZlgdHagJkR11DFSyThqWZnolVMnuQhd6cUg6/T9l4XXv907qLV"></script>
+<script defer src="/assets/runtime.js?v=20261123-r6-v181-real-file-api" integrity="sha384-kxzcVZcAZJKHohRKtwdcyff2MPo/ySvsV8D51BF83vqJLnyWTWH1vJ+ZjYS2vhu/"></script>
+<script defer src="/assets/txt-reader.js?v=20261123-r6-v181-real-file-api" integrity="sha384-HhYcMLKxY17ZHBrjNaHFdHDzVKjJxOxb0AkGrnOPJPYTV+SlkCNH35wKuhOwsOmD"></script>
 </head>
 <body class="txt-page">
 <a class="skip" href="#main">跳至正文</a>
@@ -24,10 +24,10 @@
 <p>本站只保存 1,360 本书的书名、路径与分类索引，<strong>不再上传 226 MB 的 TXT 正文</strong>。</p>
 <p><a class="button" href="http://103.143.81.181/#drive?path=%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F%E6%94%B9%E9%9D%A9%E5%AE%97%E5%BF%83%E7%81%B5%E8%BE%85%E5%AF%BCTXT%E7%94%B5%E5%AD%90%E4%B9%A6" rel="noopener noreferrer" target="_blank">网盘一：TXT 全部目录</a>　<a class="button secondary" href="http://85.189.89.208/#drive?path=%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F%E6%94%B9%E9%9D%A9%E5%AE%97%E5%BF%83%E7%81%B5%E8%BE%85%E5%AF%BCTXT%E7%94%B5%E5%AD%90%E4%B9%A6" rel="noopener noreferrer" target="_blank">网盘二：TXT 备用目录</a></p>
 <p><button type="button" class="secondary" id="txt-test-remote">实测网盘在线读取一份 TXT</button> <span id="txt-remote-status" class="subtle" role="status">仅测试真实正文；书目存在不代表文件接口可用。</span></p>
-<p>你的两条网盘均使用 HTTP。本网站现在按实际访问协议尝试读取允许的 HTTP TXT 文件地址，并对正文做长度及 SHA-256 校验；不是把网盘网页误当 TXT。能否读取取决于网盘是否公开真正的文件接口及允许本站跨域访问。若是 HTTPS 方式访问本站，浏览器仍可能阻止 HTTP 文件请求。</p>
+<p><strong>已接入网盘真实文件接口 /api/file。</strong>点击书名可尝试直接阅读；在 HTTPS 页面，点击时将打开真实文件下载链接，下方也会列出主、备线路的直接链接。下载后使用“打开刚下载的单份 TXT”即可在本站全文阅读和朗读。要让 HTTPS 网站不经下载就直接读取 HTTP 文件，需要另行部署同源 HTTPS 转发接口；浏览器不能绕过混合内容限制。</p>
 </section>
 <section class="panel txt-import" aria-labelledby="txt-import-title"><h2 id="txt-import-title">导入与更新文件</h2>
-<div class="txt-import-grid"><div><strong>网站 TXT 文件夹</strong><p>本轻量包仅提供云端目录索引，TXT 正文保存在外部网盘。请从上方网盘下载所需文件夹并在右侧导入；将来若自行部署 TXT 正文，也可按索引工具重新建立本地目录。</p><p id="txt-index-summary" class="subtle" role="status">正在读取网站 TXT 目录……</p></div><div><strong>直接阅读本机文件夹</strong><p>无需上传或安装程序：选择电脑上的某个文件夹，连同其所有子文件夹中的 TXT 一起读取和分类。文件只在当前浏览器页面读取，不上传本站。</p><label class="txt-folder-picker">选择本机 TXT 文件夹<input id="txt-folder-picker" type="file" multiple webkitdirectory directory accept=".txt,text/plain"></label><button type="button" class="secondary" id="txt-clear-local">清除本机文件列表</button></div></div>
+<div class="txt-import-grid"><div><strong>网站 TXT 文件夹</strong><p>本轻量包仅提供云端目录索引，TXT 正文保存在外部网盘。请从上方网盘下载所需文件夹并在右侧导入；将来若自行部署 TXT 正文，也可按索引工具重新建立本地目录。</p><p id="txt-index-summary" class="subtle" role="status">正在读取网站 TXT 目录……</p></div><div><strong>直接阅读本机文件夹</strong><p>无需上传或安装程序：选择电脑上的某个文件夹，连同其所有子文件夹中的 TXT 一起读取和分类。文件只在当前浏览器页面读取，不上传本站。</p><label class="txt-folder-picker">打开刚下载的单份 TXT<input id="txt-single-picker" type="file" accept=".txt,text/plain"></label> <label class="txt-folder-picker">选择本机 TXT 文件夹<input id="txt-folder-picker" type="file" multiple webkitdirectory directory accept=".txt,text/plain"></label><button type="button" class="secondary" id="txt-clear-local">清除本机文件列表</button></div></div>
 <p class="subtle">静态网站不能自行列举服务器任意新文件；包内提供目录更新脚本和自动索引工作流。直接选择本机文件夹则不需重新建索引。</p>
 </section>
 <div class="txt-layout">
@@ -68,7 +68,7 @@
 <article class="txt-paper" id="txt-paper" aria-label="TXT电子书正文"><p class="txt-placeholder">选择一份 TXT 文件后，这里会完整显示内容。点击任意段落即可从该段开始朗读。</p></article>
 </section>
 </div></div>
-<section class="notice"><h2>使用说明与兼容边界</h2><p>本站支持 HTTP 网站访问，并可尝试两条指定 HTTP 网盘的可跨域 TXT 直链。若服务器未提供可读取的直链或跨域许可，书名搜索和打开网盘路径仍可用；全库在线全文检索需要后端索引。使用本机 TXT 文件夹可直接全文检索和连续朗读。</p><p>网站本地导入的 TXT 不上传本站；若未来配置在线语音，文字可能按你选择的服务商处理。网站的朗读使用浏览器提供的声音；原生暂停优先保留当前句子进度；少数设备语音引擎仍可能重置，设备休眠、锁屏、浏览器节流及网络声音服务故障都可能打断长时间连续播放。</p><p>完整建站说明见 <a href="/TXT/使用说明.html">TXT 文件夹使用说明</a>；不要把网站文件夹的更新误认为圣经审校 Word 母稿已更新。</p></section>
+<section class="notice"><h2>使用说明与兼容边界</h2><p>网盘真实文件接口为 /api/file?path=...&amp;download=1。HTTP 网站仅在服务器允许跨域访问时可站内读取；HTTPS 网站须经同源 HTTPS 中转才能站内读取 HTTP 正文。文件直链和本地导入均已保留。使用本机 TXT 文件夹可直接全文检索和连续朗读。</p><p>网站本地导入的 TXT 不上传本站；若未来配置在线语音，文字可能按你选择的服务商处理。网站的朗读使用浏览器提供的声音；原生暂停优先保留当前句子进度；少数设备语音引擎仍可能重置，设备休眠、锁屏、浏览器节流及网络声音服务故障都可能打断长时间连续播放。</p><p>完整建站说明见 <a href="/TXT/使用说明.html">TXT 文件夹使用说明</a>；不要把网站文件夹的更新误认为圣经审校 Word 母稿已更新。</p></section>
 <noscript><p>TXT目录搜索和朗读需要 JavaScript。若无法运行脚本，请启用浏览器脚本后重试。</p></noscript>
 </main>
 <footer class="shell"><p><strong>弥赛亚改革宗神学翻译网</strong> · 以圣经为准绳，注重原文、译文与出处。</p><p>网站资源仅作索引和阅读；有关文本的学术或神学判断应核对原资料。</p><a href="/about/">版本、来源与使用说明</a> · <a href="mailto:gqdd056@gmail.com">联系方式</a><p class="subtle">TXT阅读与连续朗读版 · <a href="/about/#release-check">核对版本</a></p></footer>

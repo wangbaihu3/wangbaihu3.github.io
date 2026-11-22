@@ -1,0 +1,10 @@
+真实网盘TXT文件接口和阅读器
+
+主线路：http://103.143.81.181/api/file?path=<urlencoded_absolute_path>&download=1&request_id=<unique_hex>
+备用线路：http://85.189.89.208/api/file?path=<urlencoded_absolute_path>&download=1&request_id=<unique_hex>
+
+文件路径由「/电子书/中文/王百虎/改革宗心灵辅导TXT电子书/」加上TXT/index.json中的路径构成。用户提供的真实示例少了一层「改革宗心灵辅导资料」，因此尝试这两种层级，并对返回正文做长度和SHA256校验。
+
+在HTTPS的GitHub Pages上，浏览器禁止使用fetch读取纯HTTP接口。这时点击文件自动打开真正的/api/file下载地址，并可以使用单文件导入继续在本站朗读。若希望HTTPS页面无需下载直接朗读，需要自行部署一个同源HTTPS /api/txt/read?path=... 接口；GitHub Pages静态文件不能代替服务器代理。
+
+本环境无法访问两台公网HTTP服务器，因此线上接口以及CORS响应头尚未实核。不要把本地模拟测试当成用户站点上线测试。

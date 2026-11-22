@@ -26,3 +26,7 @@
 @media(max-width:560px){.txt-two,.txt-options-grid{grid-template-columns:1fr 1fr;gap:6px}.txt-play-buttons button{flex:1 1 43%}.txt-paper{padding:16px 10px}.txt-paper .txt-paragraph{padding:8px 5px}.txt-reading-zone{padding:8px}.txt-file-item{font-size:13px}.txt-current-title{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.txt-paper{scroll-behavior:auto}}
 @media print{.txt-browser,.txt-controls,.txt-appearance,.txt-import,.txt-find{display:none!important}.txt-layout{display:block}.txt-paper{box-shadow:none;border:0;max-width:none!important;background:white;color:black}}
+
+/* 文件卡片上的真实 /api/file 跳转入口；与站内朗读按钮分开。 */
+.txt-direct-file{display:block;margin:-.4rem 0 .75rem;padding:.1rem .65rem .45rem;font-size:.85rem;color:#17426d;text-decoration:underline;overflow-wrap:anywhere;}
+.txt-paper>a.button{display:inline-block;margin:.4rem .5rem .4rem 0;text-decoration:underline;overflow-wrap:anywhere;}
