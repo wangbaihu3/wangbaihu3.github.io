@@ -1,7 +1,7 @@
 /* Same-origin, bounded data loading with release and SHA-256 consistency checks. */
 (function (root) {
   'use strict';
-  const BUILD = '20261123-r4-v181-natural-tts';
+  const BUILD = '20261123-r5-v181-http-txt';
   const BASE = root.location ? root.location.href : 'https://https.ng/';
   const ORIGIN = new URL(BASE).origin;
   let releasePromise = null;
@@ -48,11 +48,51 @@
     } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
   }
   function decode(bytes) { return new TextDecoder('utf-8', {fatal:true}).decode(bytes); }
-  async function digest(bytes) {
-    if (!root.crypto?.subtle) throw Error('当前环境不能核对 SHA-256；请使用 HTTPS 或可信本机预览，不读取未经核对的数据库');
-    const hash = await root.crypto.subtle.digest('SHA-256', bytes);
-    return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
+
+// SHA-256 in plain JavaScript for ordinary HTTP origins where crypto.subtle is unavailable.
+// This detects accidental mixed-version files, but cannot authenticate HTTP delivery.
+function portableSHA256(input) {
+  const K = new Uint32Array([
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+  ]);
+  const H = new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+  const length=input.length, padded=Math.ceil((length+9)/64)*64;
+  const data=new Uint8Array(padded), words=new Uint32Array(64);data.set(input);data[length]=128;
+  const bits=length*8;
+  for(let i=0;i<8;i++) data[padded-1-i]=Math.floor(bits/Math.pow(2,i*8))&255;
+  function rotr(v,n){return(v>>>n)|(v<<(32-n));}
+  for(let offset=0;offset<padded;offset+=64){
+    for(let j=0;j<16;j++){const k=offset+j*4;words[j]=((data[k]<<24)|(data[k+1]<<16)|(data[k+2]<<8)|data[k+3])>>>0;}
+    for(let j=16;j<64;j++){
+      const x=words[j-15],y=words[j-2];
+      const s0=rotr(x,7)^rotr(x,18)^(x>>>3),s1=rotr(y,17)^rotr(y,19)^(y>>>10);
+      words[j]=(words[j-16]+s0+words[j-7]+s1)>>>0;
+    }
+    let [a,b,c,d,e,f,g,h]=H;
+    for(let j=0;j<64;j++){
+      const s1=rotr(e,6)^rotr(e,11)^rotr(e,25),ch=(e&f)^(~e&g),t1=(h+s1+ch+K[j]+words[j])>>>0;
+      const s0=rotr(a,2)^rotr(a,13)^rotr(a,22),maj=(a&b)^(a&c)^(b&c),t2=(s0+maj)>>>0;
+      h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0;
+    }
+    H[0]=(H[0]+a)>>>0;H[1]=(H[1]+b)>>>0;H[2]=(H[2]+c)>>>0;H[3]=(H[3]+d)>>>0;
+    H[4]=(H[4]+e)>>>0;H[5]=(H[5]+f)>>>0;H[6]=(H[6]+g)>>>0;H[7]=(H[7]+h)>>>0;
   }
+  return Array.from(H,v=>v.toString(16).padStart(8,'0')).join('');
+}
+async function digest(bytes) {
+  if(root.crypto?.subtle) {
+    const hash=await root.crypto.subtle.digest('SHA-256',bytes);
+    return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  return portableSHA256(bytes instanceof Uint8Array?bytes:new Uint8Array(bytes));
+}
   function release() {
     if (!releasePromise) releasePromise = raw('/version.json', {json:true,maxBytes:200000}).then(bytes => {
       const value = JSON.parse(decode(bytes));
@@ -87,5 +127,5 @@
     await Promise.all(workers); return results;
   }
   function decodeFragment(hash) { try { return decodeURIComponent(String(hash || '').replace(/^#/,'')); } catch { return null; } }
-  root.SiteRuntime = {build:BUILD,json,release,verifyFiles,decodeFragment};
+  root.SiteRuntime = {build:BUILD,json,release,verifyFiles,decodeFragment,digest};
 })(typeof window !== 'undefined' ? window : globalThis);
