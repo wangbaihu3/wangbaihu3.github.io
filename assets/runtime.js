@@ -1,7 +1,7 @@
 /* Same-origin, bounded data loading with release and SHA-256 consistency checks. */
 (function (root) {
   'use strict';
-  const BUILD = '20261122-r4-v181-continuous';
+  const BUILD = '20261123-r4-v181-natural-tts';
   const BASE = root.location ? root.location.href : 'https://https.ng/';
   const ORIGIN = new URL(BASE).origin;
   let releasePromise = null;

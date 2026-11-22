@@ -4,13 +4,13 @@
   class ReaderSpeech {
     constructor(synth, Utterance, options = {}) {
       Object.assign(this, {synth, Utterance, items:[], index:0, generation:0, state:'idle', voice:null,
-        rate:1, volume:1, allowRemote:false, sleep:null, watchdog:null, phraseDelay:null, current:null});
+        rate:1, volume:1, allowRemote:false, sleep:null, watchdog:null, phraseDelay:null, current:null, deferredEnd:null});
       this.onState = options.onState || (() => {});
       this.onSegment = options.onSegment || (() => {});
     }
     notify(message) { this.onState({state:this.state, index:this.index, total:this.items.length, message}); }
     cancelCurrent() {
-      this.generation++; clearTimeout(this.watchdog); this.watchdog = null; clearTimeout(this.phraseDelay); this.phraseDelay = null; this.current = null;
+      this.generation++; clearTimeout(this.watchdog); this.watchdog = null; clearTimeout(this.phraseDelay); this.phraseDelay = null; this.current = null; this.deferredEnd = null;
       this.synth.cancel();
     }
     stop() { this.cancelCurrent(); clearTimeout(this.sleep); this.sleep = null; this.state = 'idle'; this.notify('已停止'); }
@@ -52,7 +52,8 @@
       utterance.voice = this.voice; utterance.lang = this.voice.lang;
       utterance.rate = Number.isFinite(this.rate) ? Math.max(0.5, Math.min(this.rate, 2)) : 1;
       utterance.volume = Number.isFinite(this.volume) ? Math.max(0, Math.min(this.volume, 1)) : 1;
-      const current = () => generation === this.generation && this.current === utterance && this.state === 'playing';
+      const same = () => generation === this.generation && this.current === utterance;
+      const current = () => same() && this.state === 'playing';
       const watchdog = (ms, message) => {
         clearTimeout(this.watchdog);
         this.watchdog = setTimeout(() => { if (current()) this.fail(message); }, ms);
@@ -62,12 +63,17 @@
         this.onSegment(item, this.index); this.notify('正在朗读');
         watchdog(Math.max(60000, item.text.length * 1500 / utterance.rate), '语音已开始但长时间没有完成通知；未自动跳段');
       };
-      utterance.onend = () => {
+      const finish = () => {
         if (!current()) return;
-        clearTimeout(this.watchdog); this.current = null; this.index++;
-        const delay = Math.max(0, Math.min(800, Number(item.pauseAfterMs) || 0));
-        if (delay) this.phraseDelay = setTimeout(() => { this.phraseDelay = null; this.say(generation); }, delay);
-        else this.say(generation);
+        clearTimeout(this.watchdog); this.watchdog = null; this.current = null;
+        this.deferredEnd = null; this.index++;
+        // 无额外毫秒延时：自然句读由语音引擎在一段中负责。
+        this.say(generation);
+      };
+      utterance.onend = () => {
+        if (!same()) return;
+        if (this.state === 'paused') { this.deferredEnd = finish; return; }
+        finish();
       };
       utterance.onerror = event => { if (current()) this.fail(event.error || '未知错误'); };
       watchdog(15000, '服务未开始响应，请选择另一可用声音');
@@ -76,10 +82,19 @@
     }
     pauseResume() {
       if (this.state === 'playing') {
-        // Cancel/replay is portable across engines which implement pause as cancellation.
-        this.cancelCurrent(); this.state = 'paused';
-        this.notify('已暂停；继续时会从当前短段开头重读，不跳过文字');
-      } else if (this.state === 'paused') this.play(this.index);
+        // 原生 pause/resume 保留当前发音进度，不以 cancel() 打断后重读。
+        try { this.synth.pause(); this.state = 'paused'; clearTimeout(this.watchdog); this.watchdog = null; this.notify('已暂停'); }
+        catch (error) { this.fail(error.message || '暂停失败'); }
+      } else if (this.state === 'paused') {
+        try {
+          this.synth.resume(); this.state = 'playing'; this.notify('已继续朗读');
+          if (this.deferredEnd) { const complete = this.deferredEnd; this.deferredEnd = null; complete(); }
+          else if (this.current) {
+            const current = this.current, gen = this.generation;
+            this.watchdog = setTimeout(() => { if (gen === this.generation && this.current === current && this.state === 'playing') this.fail('继续后没有收到结束通知'); }, Math.max(60000, current.text.length * 1500));
+          }
+        } catch (error) { this.fail(error.message || '继续失败'); }
+      }
     }
     move(delta) { if (this.items.length) this.play(Math.max(0, Math.min(this.items.length - 1, this.index + delta))); }
     setTimer(minutes) {
@@ -107,46 +122,38 @@
       if(count>=max||(/[。！？!?\n]/u.test(g)&&count>=20)){result.push(chunk);chunk='';count=0;}}
     if(chunk)result.push(chunk);return result;
   }
-  // Speech-only transformation: never change the visible Bible, source data, or footnotes.
-  // Text inside parentheses is preserved; the bracket glyphs themselves are never voiced.
-  // Pauses are scheduled *between* punctuation-free utterances for natural phrasing.
-  function speechSegments(text, max=160) {
-    if (!Number.isInteger(max) || max < 1 || max > 2000) throw Error('朗读分段长度无效');
-    const value = String(text ?? '');
-    const iterable = typeof Intl.Segmenter === 'function'
-      ? new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(value)
-      : fallbackGraphemes(value);
-    const rows = [];
-    let chunk = '', count = 0;
-    function flush(pauseAfterMs=0) {
-      const clean = chunk.trim();
-      if (clean) rows.push({text:clean, pauseAfterMs});
-      else if (rows.length && pauseAfterMs) rows[rows.length-1].pauseAfterMs = Math.max(rows[rows.length-1].pauseAfterMs, pauseAfterMs);
-      chunk = ''; count = 0;
+  // 连贯朗读：正文显示不改变；不将标点符号交给引擎，不再给逗号和句号单设人工延时。
+  // 一整个自然段尽量构成一条语音；接近平台容量上限时才按完整句子分段。
+  function speechSegments(text, max=320) {
+    if (!Number.isInteger(max) || max < 24 || max > 2000) throw Error('朗读分段长度无效');
+    const value = String(text ?? '').normalize('NFC');
+    const chunks=[]; let chunk='', boundary=0;
+    const append=(c)=>{if (!c) return;if (chunk && chunk.endsWith(' ') && c===' ') return;chunk+=c;};
+    function flush() {
+      const clean=chunk.replace(/\s+/gu,' ').trim();
+      if (clean) chunks.push({text:clean,pauseAfterMs:0});
+      chunk=''; boundary=0;
     }
+    const iterable=typeof Intl.Segmenter==='function' ? new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(value) : fallbackGraphemes(value);
     for (const part of iterable) {
-      const g = typeof part === 'string' ? part : part.segment;
-      if (/[\r\n\u2028\u2029]/u.test(g)) { flush(480); continue; }
-      if (/\p{P}|\p{S}/u.test(g)) {
-        if (/[。．.!！?？]/u.test(g)) flush(390);
-        else if (/[，,、]/u.test(g)) flush(180);
-        else if (/[；;：:]/u.test(g)) flush(270);
-        else if (/[—–－\-…⋯]/u.test(g)) flush(290);
-        // Quotes, parentheses and all remaining punctuation/symbols are silent.
-        continue;
+      const g=typeof part==='string'?part:part.segment;
+      if (/[\r\n\u2028\u2029]/u.test(g)) { if(chunk.length>=max*0.45) flush(); else append(' ');continue; }
+      // 标点仅参与断句判断，实际传入朗读引擎的文字只有字母/汉字/数字/组合标记和空白。
+      if (/[\p{P}\p{S}]/u.test(g)) {
+        if (/[。．.!！?？]/u.test(g)) boundary=chunk.length;
+        append(' ');if(chunk.length>=max*0.75 && boundary>=max*0.45)flush();continue;
       }
-      if (/\s/u.test(g)) {
-        if (chunk && !chunk.endsWith(' ')) chunk += ' ';
-        continue;
-      }
-      // Keep all original written letters, numbers and combining marks (including accents).
-      // Remove emoji, technical symbols, control chars and non-written decorations.
+      if (/\s/u.test(g)) {append(' ');continue;}
       if (!/[\p{L}\p{N}\p{M}]/u.test(g)) continue;
-      chunk += g; count++;
-      if (count >= max) flush();
+      append(g);
+      if (chunk.length >= max) {
+        if (boundary>max*0.45 && boundary<chunk.length) {
+          const tail=chunk.slice(boundary);
+          chunk=chunk.slice(0,boundary);flush();chunk=tail;boundary=0;
+        } else flush();
+      }
     }
-    flush();
-    return rows;
+    flush();return chunks;
   }
   function mount() {
     const $ = id => document.getElementById(id), panel = $('tts-panel');
@@ -177,18 +184,16 @@
     $('tts-remote').checked = false;
     const voiceSelect = $('tts-voice'), providerSelect = $('tts-provider');
     let actualVoices = [], availableOptions = new Map();
-    function providerName(voice) {
-      const name = String(voice.name || '') + ' ' + String(voice.voiceURI || '');
-      return /microsoft/i.test(name) ? 'microsoft' : /google/i.test(name) ? 'google' : 'other';
-    }
+    const policy=root.SpeechVoicePolicy;
+    function providerName(voice) { return policy ? policy.classify(voice) : 'other'; }
     const providerLabels = {microsoft:'微软 Microsoft', google:'谷歌 Google', other:'其他／系统声音'};
-    const voiceKey = voice => JSON.stringify([voice.voiceURI || '', voice.lang || '', voice.name || '', voice.localService === true]);
+    const voiceKey = voice => policy ? policy.voiceKey(voice) : JSON.stringify([voice.voiceURI || '', voice.lang || '', voice.name || '', voice.localService === true]);
     function selectActualVoice() {
       const voice = availableOptions.get(voiceSelect.value);
       engine.setVoice(voice && (voice.localService === true || $('tts-remote').checked) ? voice : null);
     }
     function voices() {
-      const old = voiceSelect.value, previous = engine.voice;
+      const previous = engine.voice;
       const unique = new Map();
       for (const v of root.speechSynthesis.getVoices()) unique.set(voiceKey(v), v);
       actualVoices = [...unique.values()]; availableOptions = new Map();
@@ -197,8 +202,8 @@
       if (providerSelect) for (const o of providerSelect.options) o.textContent = o.value === 'all' ? '全部实际声音（' + actualVoices.length + '）' : providerLabels[o.value] + '（' + (counts[o.value] || 0) + '）';
       voiceSelect.replaceChildren();
       const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = '请选择一个当前浏览器提供的声音'; voiceSelect.append(placeholder);
-      const list = actualVoices.filter(v => filter === 'all' || providerName(v) === filter)
-        .sort((a,b) => Number(/^zh/i.test(b.lang)) - Number(/^zh/i.test(a.lang)) || Number(b.localService === true) - Number(a.localService === true) || String(a.name).localeCompare(String(b.name)));
+      const candidates=actualVoices.filter(v => filter === 'all' || providerName(v) === filter);
+      const list = policy ? policy.sorted(candidates) : candidates;
       for (const providerID of ['microsoft','google','other']) {
         const values = list.filter(v => providerName(v) === providerID); if (!values.length) continue;
         const group = document.createElement('optgroup'); group.label = providerLabels[providerID];
@@ -210,27 +215,27 @@
         }
         voiceSelect.append(group);
       }
-      const eligible = list.filter(v => v.localService === true || $('tts-remote').checked);
-      const selected = eligible.find(v => voiceKey(v) === old) || eligible.find(v => /^zh/i.test(v.lang)) || eligible[0];
-      voiceSelect.value = selected ? voiceKey(selected) : '';
-      if (previous && (!selected || voiceKey(previous) !== voiceKey(selected))) { ++preparation; engine.stop(); }
+      const decision=policy ? policy.choose(list,$('tts-remote').checked) : {voice:null,reason:'未加载默认小雨声音选择规则'};
+      voiceSelect.value=decision.voice?voiceKey(decision.voice):'';
+      if (previous && (!decision.voice || voiceKey(previous)!==voiceKey(decision.voice))) {++preparation;engine.stop();}
       selectActualVoice();
       if ($('tts-voice-summary')) {
         $('tts-voice-summary').textContent = '本浏览器返回 ' + actualVoices.length + ' 个声音：微软 ' + counts.microsoft + '、谷歌 ' + counts.google + '、其他 ' + counts.other + '。' +
           (!list.length ? '当前来源没有可用声音；不会用其他厂商声音冒充。可刷新或换用已安装对应声音的浏览器。' :
-          !eligible.length ? '已列出联网声音；先明确允许联网语音，才能选择播放。' : '当前来源可选 ' + eligible.length + ' 个；联网声音未经许可保持禁用。') +
-          ' 厂商按浏览器返回的名称识别；不是本站另外接入云端 API。';
+          decision.reason || '已选当前浏览器实际提供的声音。') +
+          ' 默认目标：微软在线 HsiaoYu（zh-TW-HsiaoYuNeural）。未接通的云端厂商不会列为可播放。';
       }
     }
     voices(); root.speechSynthesis.addEventListener?.('voiceschanged', voices);
-    voiceSelect.addEventListener('change', () => { ++preparation; engine.stop(); flowHooks?.onStop?.(); selectActualVoice(); });
+    voiceSelect.addEventListener('change', () => { ++preparation; engine.stop(); flowHooks?.onStop?.(); const v=availableOptions.get(voiceSelect.value);if(v)policy?.save(v);selectActualVoice(); });
     if (providerSelect) providerSelect.addEventListener('change', () => { ++preparation; engine.stop(); engine.setVoice(null); voiceSelect.value = ''; flowHooks?.onStop?.(); voices(); });
     $('tts-refresh')?.addEventListener('click', voices);
+    $('tts-default')?.addEventListener('click', () => {policy?.reset();providerSelect.value='all';voices();$('tts-status').textContent='已恢复默认目标小雨；必须在实际声音目录中存在并获得联网许可才能播放。';});
     $('tts-remote').addEventListener('change', () => { ++preparation; engine.stop(); engine.allowRemote = $('tts-remote').checked; flowHooks?.onStop?.(); voices(); });
     $('tts-rate').addEventListener('input', () => { engine.rate = Number($('tts-rate').value); $('tts-rate-value').textContent = engine.rate.toFixed(1); });
     $('tts-volume').addEventListener('input', () => { engine.volume = Number($('tts-volume').value); });
     $('tts-timer').addEventListener('change', () => { const m=Number($('tts-timer').value); sleepDeadline=m>0?Date.now()+m*60000:null; engine.setTimer(m); });
-    function items() { return provider().flatMap((item, p) => speechSegments(item.text).map((seg, i) => ({...item, ...seg, id:(item.id || 'paragraph-' + p) + '-segment-' + i}))).filter(x => x.text.trim()); }
+    function items() { return provider().flatMap((item, p) => speechSegments(item.text, 360).map((seg, i) => ({...item, ...seg, id:(item.id || 'paragraph-' + p) + '-segment-' + i}))).filter(x => x.text.trim()); }
     async function prepare() {
       const token=++preparation,rows=[],source=provider(); engine.stop();
       $('tts-status').textContent='正在准备朗读短段……';
@@ -247,12 +252,12 @@
             while(end<item.text.length&&/[\p{Mark}\uFE0E\uFE0F\u200D]/u.test(item.text[end]))end++;
             if(item.text[end-1]==='\u200D')end=Math.min(item.text.length,end+2);
           }
-          for(const seg of speechSegments(item.text.slice(offset,end))){if(seg.text.trim())rows.push({...item, text:seg.text, pauseAfterMs:seg.pauseAfterMs, id:(item.id||'paragraph-'+p)+'-segment-'+segmentIndex});segmentIndex++;}
+          for(const seg of speechSegments(item.text.slice(offset,end), 360)){if(seg.text.trim())rows.push({...item, text:seg.text, pauseAfterMs:seg.pauseAfterMs, id:(item.id||'paragraph-'+p)+'-segment-'+segmentIndex});segmentIndex++;}
           offset=end;
           if(rows.length>30000){$('tts-status').textContent='朗读短段超过 30000；请把文稿分章后再读，未截断后继续朗读。';return null;}
           if(offset<item.text.length){await new Promise(r=>setTimeout(r,0));if(token!==preparation)return null;}
         }
-        if (rows.length) rows[rows.length-1].pauseAfterMs=Math.max(rows[rows.length-1].pauseAfterMs||0,250);
+        // 完整经节间不人工加停顿。
         if(p%32===0){await new Promise(r=>setTimeout(r,0));if(token!==preparation)return null;}
       }
       return token===preparation?rows:null;
