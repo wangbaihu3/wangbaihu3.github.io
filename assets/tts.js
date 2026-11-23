@@ -180,8 +180,9 @@
         try { if (item.persist !== false) localStorage.setItem('messiah-tts-position', JSON.stringify({schema:4, context:context(), index, id:item.id, saved:Date.now()})); } catch {}
       }
     });
-    // Consent is per page session; do not inherit restored checkbox state as a new authorization.
-    $('tts-remote').checked = false;
+    // 本站公开经文朗读按用户要求默认允许浏览器联网声音；用户可关闭，点击播放后才会调用服务。
+    $('tts-remote').checked = true;
+    engine.allowRemote = true;
     const voiceSelect = $('tts-voice'), providerSelect = $('tts-provider');
     let actualVoices = [], availableOptions = new Map();
     const policy=root.SpeechVoicePolicy;
@@ -223,14 +224,16 @@
         $('tts-voice-summary').textContent = '本浏览器返回 ' + actualVoices.length + ' 个声音：微软 ' + counts.microsoft + '、谷歌 ' + counts.google + '、其他 ' + counts.other + '。' +
           (!list.length ? '当前来源没有可用声音；不会用其他厂商声音冒充。可刷新或换用已安装对应声音的浏览器。' :
           decision.reason || '已选当前浏览器实际提供的声音。') +
-          ' 默认目标：微软在线 HsiaoYu（zh-TW-HsiaoYuNeural）。未接通的云端厂商不会列为可播放。';
+          ' 默认优先：微软 HsiaoYu；若缺席，显示实际中文备选的真实名称，绝不冒称小雨。';
       }
     }
     voices(); root.speechSynthesis.addEventListener?.('voiceschanged', voices);
+    // 一些浏览器的声音目录会异步填充；两次有界复查避免初次列表为空。
+    root.setTimeout?.(voices, 350); root.setTimeout?.(voices, 1400);
     voiceSelect.addEventListener('change', () => { ++preparation; engine.stop(); flowHooks?.onStop?.(); const v=availableOptions.get(voiceSelect.value);if(v)policy?.save(v);selectActualVoice(); });
     if (providerSelect) providerSelect.addEventListener('change', () => { ++preparation; engine.stop(); engine.setVoice(null); voiceSelect.value = ''; flowHooks?.onStop?.(); voices(); });
     $('tts-refresh')?.addEventListener('click', voices);
-    $('tts-default')?.addEventListener('click', () => {policy?.reset();providerSelect.value='all';voices();$('tts-status').textContent='已恢复默认目标小雨；必须在实际声音目录中存在并获得联网许可才能播放。';});
+    $('tts-default')?.addEventListener('click', () => {policy?.reset();providerSelect.value='all';voices();$('tts-status').textContent='已恢复小雨优先策略；若当前没有小雨，将明确显示所使用的中文备选声音。';});
     $('tts-remote').addEventListener('change', () => { ++preparation; engine.stop(); engine.allowRemote = $('tts-remote').checked; flowHooks?.onStop?.(); voices(); });
     $('tts-rate').addEventListener('input', () => { engine.rate = Number($('tts-rate').value); $('tts-rate-value').textContent = engine.rate.toFixed(1); });
     $('tts-volume').addEventListener('input', () => { engine.volume = Number($('tts-volume').value); });

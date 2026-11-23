@@ -1,0 +1,6 @@
+# Python缓存与操作系统临时文件不属于发布资源。
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db

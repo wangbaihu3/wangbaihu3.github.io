@@ -1,35 +1,11 @@
-name: 更新 TXT 递归目录及全文预筛索引
+name: 云端TXT目录保护（不重建）
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - 'TXT/**/*.txt'
-      - 'TXT/**/*.TXT'
-      - 'tools/重建TXT全文索引.cjs'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  rebuild:
+  verify-mode:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Rebuild TXT index
-        run: node --max-old-space-size=3072 tools/重建TXT全文索引.cjs
-      - name: Rebuild site release manifest
-        run: node tools/生成网站文件校验.cjs
-      - name: Save generated manifest only
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add TXT/index.json TXT/index-stats.json TXT/bloom.bin version.json
-          if ! git diff --cached --quiet; then
-            git commit -m "更新TXT递归目录和全文索引"
-            git push
-          fi
+      - name: 此网站只维护远端TXT元数据
+        run: echo "1,360份正文保存在外部网盘；禁止从空的TXT本地目录重建索引。"

@@ -1,1 +1,12 @@
-{"source":"用户提供的RAR资料","txt_files":1360,"txt_bytes":226008955,"category_count":22,"folder_count":76,"encodings":{"utf-8":1360},"filter_bits_per_file":0,"index_bytes":893240,"bloom_bytes":0,"elapsed_sec":22.65,"online_fulltext_index_available":false}
+{
+  "source": "用户提供的原始1360篇TXT元数据，经历史实体字节校验",
+  "txt_files": 1360,
+  "txt_bytes_source": 226008955,
+  "txt_bytes_in_site": 0,
+  "category_count": 22,
+  "folder_count": 76,
+  "index_bytes": 893620,
+  "bloom_bytes": 0,
+  "remote_only": true,
+  "fulltext_index_available": false
+}
