@@ -28,7 +28,7 @@ function addBloom(buffer, offset, token) {
 }
 function encodeIds(ids){let prev=0,out=[];for(let n of ids){let d=n-prev;prev=n;while(d>=128){out.push((d&127)|128);d>>>=7;}out.push(d);}return Buffer.from(out).toString('base64')}
 function json(p,obj){fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,JSON.stringify(obj),'utf8')}
-function build(){let files=walk(TXT).sort((a,b)=>a.localeCompare(b,'zh-CN'));if(files.length>65000)throw Error('最多65000份TXT');
+function build(){let files=walk(TXT).sort((a,b)=>a.localeCompare(b,'zh-CN'));if(files.length>65000)throw Error('最多65000份TXT');if(files.length===0)throw Error('当前为云端TXT目录模式：禁止根据空目录重建并清空已有1360条元数据');
   let docs=[], bloom=Buffer.alloc(files.length*BLOOM_BYTES),cats=new Map(),folders=new Map(),total=0,encs={}, start=Date.now();
   for(let n=0;n<files.length;n++){
     let p=files[n],rel=path.relative(TXT,p).split(path.sep).join('/'),bits=rel.split('/'),folder=bits.slice(0,-1).join('/');
