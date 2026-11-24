@@ -122,38 +122,30 @@
       if(count>=max||(/[。！？!?\n]/u.test(g)&&count>=20)){result.push(chunk);chunk='';count=0;}}
     if(chunk)result.push(chunk);return result;
   }
-  // 连贯朗读：正文显示不改变；不将标点符号交给引擎，不再给逗号和句号单设人工延时。
-  // 一整个自然段尽量构成一条语音；接近平台容量上限时才按完整句子分段。
-  function speechSegments(text, max=320) {
+  // 保留原有标点、句读和语境；不将每个字或每个逗号交给独立发音请求。
+  // 用自然句界选择分段点；极长无标点文字才按安全的字素边界分开。
+  function speechSegments(text, max=240) {
     if (!Number.isInteger(max) || max < 24 || max > 2000) throw Error('朗读分段长度无效');
-    const value = String(text ?? '').normalize('NFC');
-    const chunks=[]; let chunk='', boundary=0;
-    const append=(c)=>{if (!c) return;if (chunk && chunk.endsWith(' ') && c===' ') return;chunk+=c;};
-    function flush() {
-      const clean=chunk.replace(/\s+/gu,' ').trim();
-      if (clean) chunks.push({text:clean,pauseAfterMs:0});
-      chunk=''; boundary=0;
+    const value=String(text ?? '').normalize('NFC').replace(/\r\n?/g,'\n');
+    const result=[]; let chunk=[], sentence=-1, clause=-1;
+    const iterable=typeof Intl.Segmenter==='function'?new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(value):fallbackGraphemes(value);
+    function emit(n){const part=chunk.splice(0,n).join('').trim(); if(part)result.push({text:part,pauseAfterMs:0});
+      sentence=-1;clause=-1;chunk.forEach((g,i)=>{if(/[。！？!?；;\n]/u.test(g))sentence=i+1;else if(/[，、：,:]/u.test(g))clause=i+1;});}
+    for(const item of iterable){const g=typeof item==='string'?item:item.segment;
+      // 不把原标点改为空格；不强制插入拼音、字间空格或人工休止。
+      chunk.push(g);
+      if(/[。！？!?；;\n]/u.test(g))sentence=chunk.length;
+      else if(/[，、：,:]/u.test(g))clause=chunk.length;
+      // 引号、括号留在前句；选择接近容量上限的自然句界。
+      if(chunk.length>max){let cut=sentence>=Math.floor(max*.48)?sentence:clause>=Math.floor(max*.65)?clause:max;
+        if(cut>max+1)cut=max;
+        while(cut<chunk.length&&/^[。！？!?；;，、：,:”’」』》）)\]】]/u.test(chunk[cut]))cut++;
+        emit(cut);}
     }
-    const iterable=typeof Intl.Segmenter==='function' ? new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(value) : fallbackGraphemes(value);
-    for (const part of iterable) {
-      const g=typeof part==='string'?part:part.segment;
-      if (/[\r\n\u2028\u2029]/u.test(g)) { if(chunk.length>=max*0.45) flush(); else append(' ');continue; }
-      // 标点仅参与断句判断，实际传入朗读引擎的文字只有字母/汉字/数字/组合标记和空白。
-      if (/[\p{P}\p{S}]/u.test(g)) {
-        if (/[。．.!！?？]/u.test(g)) boundary=chunk.length;
-        append(' ');if(chunk.length>=max*0.75 && boundary>=max*0.45)flush();continue;
-      }
-      if (/\s/u.test(g)) {append(' ');continue;}
-      if (!/[\p{L}\p{N}\p{M}]/u.test(g)) continue;
-      append(g);
-      if (chunk.length >= max) {
-        if (boundary>max*0.45 && boundary<chunk.length) {
-          const tail=chunk.slice(boundary);
-          chunk=chunk.slice(0,boundary);flush();chunk=tail;boundary=0;
-        } else flush();
-      }
-    }
-    flush();return chunks;
+    if(chunk.length)emit(chunk.length);
+    // Avoid a one-character or tiny tail at a length boundary.
+    if(result.length>1&&Array.from(result.at(-1).text).length<=8){const tail=result.pop().text;result.at(-1).text+=tail;}
+    return result;
   }
   function mount() {
     const $ = id => document.getElementById(id), panel = $('tts-panel');
@@ -177,7 +169,7 @@
       },
       onSegment(item, index) {
         clearHighlight(); highlight = item.element || null; highlight?.classList.add('current-audio');
-        try { if (item.persist !== false) localStorage.setItem('messiah-tts-position', JSON.stringify({schema:4, context:context(), index, id:item.id, saved:Date.now()})); } catch {}
+        try { if (item.persist !== false) localStorage.setItem('messiah-tts-position', JSON.stringify({schema:5, context:context(), index, id:item.id, saved:Date.now()})); } catch {}
       }
     });
     // 本站公开经文朗读按用户要求默认允许浏览器联网声音；用户可关闭，点击播放后才会调用服务。
@@ -238,7 +230,7 @@
     $('tts-rate').addEventListener('input', () => { engine.rate = Number($('tts-rate').value); $('tts-rate-value').textContent = engine.rate.toFixed(1); });
     $('tts-volume').addEventListener('input', () => { engine.volume = Number($('tts-volume').value); });
     $('tts-timer').addEventListener('change', () => { const m=Number($('tts-timer').value); sleepDeadline=m>0?Date.now()+m*60000:null; engine.setTimer(m); });
-    function items() { return provider().flatMap((item, p) => speechSegments(item.text, 360).map((seg, i) => ({...item, ...seg, id:(item.id || 'paragraph-' + p) + '-segment-' + i}))).filter(x => x.text.trim()); }
+    function items() { return provider().flatMap((item, p) => speechSegments(item.text, 240).map((seg, i) => ({...item, ...seg, id:(item.id || 'paragraph-' + p) + '-segment-' + i}))).filter(x => x.text.trim()); }
     async function prepare() {
       const token=++preparation,rows=[],source=provider(); engine.stop();
       $('tts-status').textContent='正在准备朗读短段……';
@@ -255,7 +247,7 @@
             while(end<item.text.length&&/[\p{Mark}\uFE0E\uFE0F\u200D]/u.test(item.text[end]))end++;
             if(item.text[end-1]==='\u200D')end=Math.min(item.text.length,end+2);
           }
-          for(const seg of speechSegments(item.text.slice(offset,end), 360)){if(seg.text.trim())rows.push({...item, text:seg.text, pauseAfterMs:seg.pauseAfterMs, id:(item.id||'paragraph-'+p)+'-segment-'+segmentIndex});segmentIndex++;}
+          for(const seg of speechSegments(item.text.slice(offset,end), 240)){if(seg.text.trim())rows.push({...item, text:seg.text, pauseAfterMs:seg.pauseAfterMs, id:(item.id||'paragraph-'+p)+'-segment-'+segmentIndex});segmentIndex++;}
           offset=end;
           if(rows.length>30000){$('tts-status').textContent='朗读短段超过 30000；请把文稿分章后再读，未截断后继续朗读。';return null;}
           if(offset<item.text.length){await new Promise(r=>setTimeout(r,0));if(token!==preparation)return null;}
@@ -306,10 +298,13 @@
       try { if (flowHooks?.beforeStart && await flowHooks.beforeStart({resume:true,saved}) === false) return; }
       catch(e) { $('tts-status').textContent='恢复定位失败：'+e.message;return; }
       let rows;try{rows=await prepare();}catch(e){$('tts-status').textContent='朗读准备失败：'+e.message;return;}if(!rows)return;
-      if (!saved || saved.schema !== 4 || saved.context !== context()) { $('tts-status').textContent = '没有与当前版本、章节和朗读模式一致的听读记录。'; return; }
-      const index = rows.findIndex(item => item.persist !== false && item.id === saved.id);
+      if (!saved || ![4,5].includes(saved.schema) || saved.context !== context()) { $('tts-status').textContent = '没有与当前版本、章节和朗读模式一致的听读记录。'; return; }
+      const legacy = saved.schema === 4;
+      const restoredId=legacy?String(saved.id||'').replace(/-segment-\d+$/, '-segment-0'):saved.id;
+      const index = rows.findIndex(item => item.persist !== false && item.id === restoredId);
       if (index < 0) { $('tts-status').textContent = '保存的段落已不在当前文稿中，未按旧序号猜测位置。'; return; }
       begin(index, rows, false);
+      if(legacy)$('tts-status').textContent='分段规则已更新，从旧记录对应经节或段落的开头继续。';
     });
     engine.rate=Number($('tts-rate').value)||1;engine.volume=Number($('tts-volume').value);
     window.addEventListener('storage',event=>{if(event.key===null||event.key==='messiah-tts-position'){$('tts-status').textContent='本机听读记录已在其他页面更新或清除。';}});

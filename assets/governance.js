@@ -20,7 +20,7 @@ ${p?`<div class="explain"><strong>${esc(p.title)}</strong>｜可观察行为例�
 <div class="caution">若存在即时危险，优先联系当地紧急服务、可信赖的现实支持者或适当专业机构。网站不会用“问卷结果”替代安全评估、医学判断或法律事实调查。</div>`;}
 function rootStage(){
  const p=issue();
- const permitted=state.facts==='confirmed'&&state.risk==='no'&&!!p;
+ const permitted=state.facts==='confirmed'&&state.risk==='no'&&!!p&&!['hurt','accused'].includes(state.signal);
  if(!permitted){
   return `<h3>关于心的省察，可以暂时跳过</h3><div class="caution">只有本人确认了具体责任、没有当前危险，才建议进一步审慎省察自己的动机。对正在受害、只受试探、事实未明或存在现实危险的人，本页面不会要求选出“偶像”或隐藏罪名。</div><p>可直接继续到“福音与关怀”，了解此时适合的帮助路径。若以后找到新的事实，仍可以回来重新核对。</p>`;
  }
@@ -30,7 +30,7 @@ function rootStage(){
  ${state.root?`<p class="explain"><strong>反证边界：</strong>${esc(data.roots.find(x=>x.id===state.root).limit)}</p>`:''}
  <p class="small">不必选择；请问自己：我实际做了什么？当时为了什么？是否还有更合理的解释？经文如何评价已证实的行为？</p>`;
 }
-function choosePath(){if(state.risk==='yes'||state.facts==='hurt'||['hurt','accused'].includes(state.signal))return 'care';if(state.facts==='tempted')return 'temptation';if(state.facts==='confirmed'&&issue())return 'repentance';if(state.facts==='unknown'||!issue())return 'evidence';return 'support';}
+function choosePath(){if(state.risk==='yes'||state.facts==='hurt'||['hurt','accused'].includes(state.signal))return 'care';if(state.risk==='unknown')return 'evidence';if(state.facts==='tempted')return 'temptation';if(state.facts==='confirmed'&&issue())return 'repentance';if(state.facts==='unknown'||!issue())return 'evidence';return 'support';}
 function gospelStage(){const p=issue(),path=data.paths.find(x=>x.id===choosePath()),r=choosePath()==='repentance'?data.roots.find(x=>x.id===state.root):null;
  return `<h3>这一步不只揭露问题，也显明基督与福音</h3><p>本路径首先区分教义与个案：人在基督里称义是凭基督的救赎、借着信心，并非靠完成步骤。对于确有罪的人，圣灵使人真实悔改、学习积极顺服；对于受苦者，首先需要合宜帮助和真实盼望。</p>
  <div class="result-columns"><article><h3>此刻更适合的路径</h3><p><strong>${esc(path.label)}</strong></p><p>${esc(path.description)}</p><p class="muted">经文：${esc(path.bible)}</p></article><article><h3>应当谨守的三项区分</h3><ul><li>试探与实际犯罪不相同。</li><li>有罪的事实与隐藏动机是不同的命题。</li><li>救赎根基与悔改行为的果子不可颠倒。</li></ul></article>
@@ -105,17 +105,17 @@ function renderResearch(){const a=$('research-area'),d=state.legacy;a.innerHTML=
 function renderResearchHits(term){const res=$('legacy-results');if(!res||!state.legacy)return;const q=term.trim().toLocaleLowerCase('zh-CN');const all=state.legacy.entries.filter(x=>(x.title+' '+x.category).toLowerCase().includes(q));res.innerHTML=`<p class="small">检索到${all.length}条历史候选，最多先显示40条；均未获个案诊断批准。</p>`+all.slice(0,40).map(x=>`<div class="research-row">${esc(x.record)} · ${esc(x.category)}｜${esc(x.title)}</div>`).join('');}
 function bind(){document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const ds=b.dataset;
  if(ds.signal){state.signal=ds.signal;state.issue=null;state.root=null;state.facts='unknown';state.risk='unknown';render();}
- if(ds.root){if(state.facts==='confirmed'&&state.risk==='no'&&issue()){state.root=state.root===ds.root?null:ds.root;render();}}
+ if(ds.root){if(state.facts==='confirmed'&&state.risk==='no'&&issue()&&!['hurt','accused'].includes(state.signal)){state.root=state.root===ds.root?null:ds.root;render();}}
  if(ds.group){state.activeGroup=ds.group;renderGroups();}
- if(ds.pick){state.issue=ds.pick;state.signal=state.signal||'other';jump(1);}
+ if(ds.pick){state.issue=ds.pick;state.signal=state.signal||'other';state.facts='unknown';state.root=null;if(state.risk!=='yes')state.risk='unknown';jump(1);}
  if(ds.goStep!==undefined)jump(Number(ds.goStep));
  if(ds.print)window.print();
  if(ds.reset){state.signal=null;state.issue=null;state.root=null;state.facts='unknown';state.risk='unknown';jump(0);}
  });
- document.addEventListener('change',e=>{const x=e.target;if(x.id==='issue-select'){state.issue=x.value||null;state.root=null;render();}if(x.name==='facts'){state.facts=x.value;if(x.value!=='confirmed')state.root=null;render();}if(x.name==='risk'){state.risk=x.value;if(x.value!=='no')state.root=null;render();}});
+ document.addEventListener('change',e=>{const x=e.target;if(x.id==='issue-select'){state.issue=x.value||null;state.root=null;state.facts='unknown';if(state.risk!=='yes')state.risk='unknown';render();}if(x.name==='facts'){state.facts=x.value;if(x.value!=='confirmed')state.root=null;render();}if(x.name==='risk'){state.risk=x.value;if(x.value!=='no')state.root=null;render();}});
  document.addEventListener('input',e=>{if(e.target.id==='legacy-q')renderResearchHits(e.target.value);});
  $('start').addEventListener('click',()=>jump(0));$('show-groups').addEventListener('click',()=>$('commandments').scrollIntoView({block:'start'}));$('back').addEventListener('click',()=>jump(state.step-1));$('next').addEventListener('click',()=>{if(state.step===4){state.signal=null;state.issue=null;state.root=null;state.facts='unknown';state.risk='unknown';jump(0);}else jump(state.step+1)});$('research-toggle').addEventListener('click',showResearch);
 }
-async function init(){bind();if(!window.SiteRuntime?.json){$stage.textContent='网站校验脚本没有加载，请从完整网站的本机预览服务打开。';return;}try{data=await window.SiteRuntime.json('/data/counseling/governance.json');if(data.schema!=='guided-governance-v2'||data.groups.length!==10||data.patterns.length!==32||data.methods.length!==8||data.guides.length!==10||data.signals.some(s=>!Array.isArray(s.suggest)))throw Error('数据格式或条目数量异常');render();renderGroups();renderMethodLibrary();}catch(e){$stage.textContent='辅导资料载入失败：'+e.message+'。请使用完整网站本机预览批处理打开，或检查网站是否完整部署。';}}
+async function init(){bind();if(!window.SiteRuntime?.json){$stage.textContent='网站校验脚本没有加载，请从完整网站的本机预览服务打开。';return;}try{data=await window.SiteRuntime.json('/data/counseling/governance.json');if(data.schema!=='guided-governance-v2'||data.groups.length!==10||data.patterns.length!==32||data.methods.length!==8||data.guides.length!==10||data.signals.some(s=>!Array.isArray(s.suggest)))throw Error('数据格式或条目数量异常');const requested=new URLSearchParams(location.search).get('issue');if(data.patterns.some(p=>p.id===requested)){state.issue=requested;state.signal='other';state.step=1;}render();renderGroups();renderMethodLibrary();}catch(e){$stage.textContent='辅导资料载入失败：'+e.message+'。请使用完整网站本机预览批处理打开，或检查网站是否完整部署。';}}
 init();
 })();

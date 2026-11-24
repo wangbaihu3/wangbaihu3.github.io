@@ -54,7 +54,7 @@ function voiceList(){try{return window.speechSynthesis?.getVoices?.()||[]}catch{
 function voiceKey(v){return [v.voiceURI||'',v.name||'',v.lang||''].join('|')}
 function hsiao(v){return /HsiaoYu/i.test(v.name||'')||/zh[-_]TW[-_]HsiaoYuNeural/i.test(v.voiceURI||'')}
 function voiceName(v){return `${v.name} · ${v.lang} · ${v.localService===false?'浏览器报告联网':'浏览器声音'}`}
-function fallbackChinese(){const voices=voiceList();return voices.find(hsiao)||[...voices].filter(v=>/^zh(?:[-_]|$)/i.test(v.lang||'')).sort((a,b)=>{
+function fallbackChinese(){const voices=voiceList();if(window.SpeechVoicePolicy)return window.SpeechVoicePolicy.choose(voices,true).voice;return voices.find(hsiao)||[...voices].filter(v=>/^zh(?:[-_]|$)/i.test(v.lang||'')).sort((a,b)=>{
  const score=v=>(/^zh[-_]tw/i.test(v.lang||'')?0:/^zh[-_]cn/i.test(v.lang||'')?4:8)+(/Microsoft/i.test(v.name||'')?0:/Google/i.test(v.name||'')?1:2);
  return score(a)-score(b)||String(a.name).localeCompare(String(b.name),'zh');})[0]||null;}
 function voiceSelectHtml(){const a=voiceList(), auto=fallbackChinese(),selected=state.reader.voiceKey;
@@ -113,7 +113,7 @@ async function openReaderFile(file){if(!file)return;if(file.size>20_000_000){sta
  stopTTS();state.reader.paras=makeParas(text);state.reader.shown=Math.min(120,state.reader.paras.length);state.reader.current=0;state.reader.title=file.name;state.reader.status=`已读取 ${fmt(bytes.byteLength)} 字节、${fmt(state.reader.paras.length)} 段；未上传。`;
  renderReader();}
 function stopTTS(){state.voiceOpt++;state.playing=false;state.paused=false;try{window.speechSynthesis?.cancel()}catch{}}
-function splitLong(s,max=900){if(s.length<=max)return[s];let results=[],remain=s;while(remain.length>max){let end=Math.max(remain.lastIndexOf('。',max),remain.lastIndexOf('？',max),remain.lastIndexOf('！',max),remain.lastIndexOf('；',max));if(end<max*0.45)end=max-1;results.push(remain.slice(0,end+1));remain=remain.slice(end+1);}if(remain)results.push(remain);return results;}
+function splitLong(s,max=240){if(window.ReaderSpeechSegments)return window.ReaderSpeechSegments(s,max).map(x=>x.text);if(s.length<=max)return[s];let results=[],remain=s;while(remain.length>max){let end=Math.max(remain.lastIndexOf('。',max),remain.lastIndexOf('？',max),remain.lastIndexOf('！',max),remain.lastIndexOf('；',max));if(end<max*0.45)end=max-1;results.push(remain.slice(0,end+1));remain=remain.slice(end+1);}if(remain)results.push(remain);return results;}
 function voiceObject(){const wanted=state.reader.voiceKey;return (wanted?voiceList().find(v=>voiceKey(v)===wanted):null)||fallbackChinese();}
 function playTTS(idx){if(!state.reader.paras.length){setReaderStatus('没有已打开的正文。');return;}const v=voiceObject();if(!v){setReaderStatus('当前没有浏览器实际提供的中文声音，请检查系统语音或刷新声音列表。');return;}
  stopTTS();const op=state.voiceOpt;const tasks=[];for(let i=idx;i<state.reader.paras.length;i++)for(const t of splitLong(state.reader.paras[i]))tasks.push({i,text:t});let ptr=0;state.playing=true;

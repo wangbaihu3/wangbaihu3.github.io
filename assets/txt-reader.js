@@ -324,7 +324,7 @@ function selectedDocs(scope,entry){if(scope==='paragraph'||scope==='file')return
 function speechItems(fromIndex,onlyOne){let rows=[];
  const from=Math.max(0,Math.min(fromIndex,state.paragraphs.length-1));const end=onlyOne?from+1:state.paragraphs.length;
  for(let i=from;i<end;i++){
-  const value=state.paragraphs[i];const segments=typeof window.ReaderSpeechSegments==='function'?window.ReaderSpeechSegments(value,360):[];
+  const value=state.paragraphs[i];const segments=typeof window.ReaderSpeechSegments==='function'?window.ReaderSpeechSegments(value,240):[];
   for(let j=0;j<segments.length;j++){const seg=segments[j];rows.push({text:seg.text,id:state.selected.id+':'+i+':'+j,pauseAfterMs:seg.pauseAfterMs,
       element:state.nodes[i],paragraphIndex:i,persist:true});}
   // TXT段落之间不追加毫秒级人为停顿。

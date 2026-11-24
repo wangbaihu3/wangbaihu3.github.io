@@ -17,14 +17,14 @@ function reset(){try{root.localStorage?.removeItem(KEY);}catch{}}
 function fallbackRank(v){const s=classify(v),l=String(v.lang||'').toLowerCase();
  const locale=l.startsWith('zh-tw')?0:l.startsWith('zh-cn')?4:l.startsWith('zh-hk')?8:12;
  const vendor=s==='microsoft'?0:s==='google'?1:2;
- return locale+vendor+(v.localService===true?0.05:0);
+ return locale*4+vendor+(v.localService===true?8:0);
 }
 function choose(voices,allowRemote=false,filter='all'){
  const list=voices.filter(v=>(filter==='all'||classify(v)===filter));
  const permitted=list.filter(v=>v.localService===true||allowRemote);
  const pref=stored();
  const explicit=pref?list.find(v=>voiceKey(v)===pref.key):null;
- const preferred=explicit || (!pref?list.find(target):null);
+ const preferred=explicit || list.find(target);
  if(preferred && (preferred.localService===true||allowRemote))return {voice:preferred,fallback:false,reason:target(preferred)?'微软小雨已在本浏览器声音列表中，已选中。':'已恢复你手动选择的声音：'+preferred.name+'。'};
  const alternatives=permitted.filter(chinese).sort((a,b)=>fallbackRank(a)-fallbackRank(b)||String(a.name).localeCompare(String(b.name),'zh'));
  const fallback=alternatives[0]||null;

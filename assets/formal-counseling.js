@@ -155,7 +155,7 @@ function speak(){if(!reader)return;
   texts=[ch.title,ch.scriptures,...(duplicate?[]:ch.teaching||[]),...(ch.exegesis||[]),...(ch.doctrine||[]),...(ch.practice_detail||[]),ch.case,...(ch.steps||[]),...(ch.questions||[]),ch.countercase,ch.boundary,ch.prayer,...(ch.dialogue||[]),...(ch.evidence||[])].filter(Boolean);
  }
  const splitter=window.ReaderSpeechSegments;
- const items=texts.flatMap((s,i)=>{const pieces=typeof splitter==='function'?splitter(s,280).map(x=>x.text):String(s).match(/[\s\S]{1,240}/g)||[];return pieces.map((text,j)=>({text,id:i+'-'+j}));});
+ const items=texts.flatMap((s,i)=>{const pieces=typeof splitter==='function'?splitter(s,240).map(x=>x.text):String(s).match(/[\s\S]{1,240}/g)||[];return pieces.map((text,j)=>({text,id:i+'-'+j}));});
  const policy=window.SpeechVoicePolicy;
  if(!actualVoices.length)populateVoices();
  const selector=document.getElementById('course-voice');

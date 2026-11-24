@@ -50,7 +50,7 @@
     let seek=null;
     if(resume) {
       const m=/^bible:([a-f0-9]{64}):(\d+):(\d+):body$/.exec(String(saved?.context||''));
-      if(!m || saved?.schema!==4 || m[1]!==meta.version.source_sha256){flowMessage('旧听读记录不属于当前第181版正文，不能强制套用。');return false;}
+      if(!m || ![4,5].includes(saved?.schema) || m[1]!==meta.version.source_sha256){flowMessage('旧听读记录不属于当前第181版正文，不能强制套用。');return false;}
       seek={book:Number(m[2]),chapter:Number(m[3])};
       if(!meta.books[seek.book-1] || seek.chapter>meta.books[seek.book-1].chapters || seek.chapter<1){flowMessage('保存章节越界，未恢复');return false;}
     }

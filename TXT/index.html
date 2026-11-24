@@ -9,12 +9,12 @@
 <meta content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; connect-src 'self' http://103.143.81.181 http://85.189.89.208; object-src 'none'; base-uri 'none'; form-action 'self'" http-equiv="Content-Security-Policy"/>
 <title>TXT 阅读与连续朗读｜弥赛亚改革宗神学翻译网</title>
 <meta content="递归浏览TXT分类目录；搜索书名与正文，逐段听读、分类连续与循环朗读，深色与护眼主题。" name="description"/>
-<link href="/assets/app.css" integrity="sha384-XSWEdFrNhY+dFgkxzFaEPu0HpGumUc2jCooQoK4NHnwwlL7FQ9jMoq7ipflt/gr0" rel="stylesheet"/>
-<link href="/assets/txt-reader.css?v=20261124-r24-fullsite-counseling-methods-and-win-launcher" integrity="sha384-LDZ30QE0Azw9axME4mauvcYBdZLBEmJbHBXAutJvfhD2SnE5VC4cKWdl4VZKFhBA" rel="stylesheet"/>
-<script defer="" integrity="sha384-xhnI5yDIRg4TB613ywTv68JdNave3j8+NgOxptxUkOFeOq0Q7d6oEFPHIpXhRbZk" src="/assets/voice-policy.js"></script><script defer="" integrity="sha384-YW8ybXzuddQ6G9GbUggGmbfXdqLokrPUw0RUpDQ8f7hr4rm4YB4ZPwYtcpoXZkjh" src="/assets/pronunciation-rules.js"></script>
-<script defer="" integrity="sha384-IUxuDkLzZJGqoihFphuiugqWP0TEs1s9Poa3LPqZ/U1rwggBmwtpKUmvrK1CF4U8" src="/assets/tts.js"></script>
-<script defer="" integrity="sha384-efzp4+Sd4ycgc8rD7EFDx+HXHeOmvJsVesKSKsC6AGS6roR8rzzrufAO3nBepMYu" src="/assets/runtime.js?v=20261124-r24-fullsite-counseling-methods-and-win-launcher"></script>
-<script defer="" integrity="sha384-jK0t+vTp1ViKFcMLTqnfpbwJcuR1UX8prNncL2cVtLMkFj9Cl3E+zZrAX90qxs6n" src="/assets/txt-reader.js?v=20261124-r24-fullsite-counseling-methods-and-win-launcher"></script>
+<link href="/assets/app.css?v=20261124-r25-pastoral-topics-natural-speech" integrity="sha384-XSWEdFrNhY+dFgkxzFaEPu0HpGumUc2jCooQoK4NHnwwlL7FQ9jMoq7ipflt/gr0" rel="stylesheet"/>
+<link href="/assets/txt-reader.css?v=20261124-r25-pastoral-topics-natural-speech" integrity="sha384-LDZ30QE0Azw9axME4mauvcYBdZLBEmJbHBXAutJvfhD2SnE5VC4cKWdl4VZKFhBA" rel="stylesheet"/>
+<script defer="" integrity="sha384-tnvPBwgPsfza7gJuoqCnL/9DqtC3U2ljNd4BIwP5czAebF/mRlhr5YcY+s7OtVv5" src="/assets/voice-policy.js?v=20261124-r25-pastoral-topics-natural-speech"></script><script defer="" integrity="sha384-YW8ybXzuddQ6G9GbUggGmbfXdqLokrPUw0RUpDQ8f7hr4rm4YB4ZPwYtcpoXZkjh" src="/assets/pronunciation-rules.js?v=20261124-r25-pastoral-topics-natural-speech"></script>
+<script defer="" integrity="sha384-5lzE/ui1msU0Z7Nlx1YitYb0B503/cFQymsb7nfaw1doQ7VQR1fWitARhbbikmVa" src="/assets/tts.js?v=20261124-r25-pastoral-topics-natural-speech"></script>
+<script defer="" integrity="sha384-Q2/APM67/I+AqDebEhPQSR82w9ZQMrC6A9N18T3HNSD9omqdpn2JdG1Vhy2A6dxG" src="/assets/runtime.js?v=20261124-r25-pastoral-topics-natural-speech"></script>
+<script defer="" integrity="sha384-pT1nClXoWK2HyXXCuGla6UUdR3CxePH73KVj0zIr0iwjrqMTw11SDhi53+p/4b0Z" src="/assets/txt-reader.js?v=20261124-r25-pastoral-topics-natural-speech"></script>
 </head>
 <body class="txt-page">
 <a class="skip" href="#main">跳至正文</a>
@@ -45,7 +45,7 @@
 </div>
 <label class="txt-consent"><input id="txt-remote" type="checkbox" checked/>已允许联网声音（点击播放后，所选公开TXT文字可能经浏览器语音服务商处理；可取消）</label>
 <div class="actions txt-play-buttons"><button id="txt-play" type="button">从当前段开始朗读</button><button class="secondary" id="txt-pause" type="button">暂停／继续</button><button class="secondary" id="txt-prev" type="button">上一段</button><button class="secondary" id="txt-next" type="button">下一段</button><button class="secondary" id="txt-stop" type="button">停止</button><button class="secondary" id="txt-restore" type="button">恢复上次位置</button><button class="secondary" id="txt-refresh-voices" type="button">刷新声音</button><button class="secondary" id="txt-default" type="button">恢复默认小雨</button></div>
-<p aria-live="polite" id="txt-tts-status" role="status">选择文件与发音人后开始朗读。当前版本不送出标点字符，也不人为按逗号和句号加长停顿。</p>
+<p aria-live="polite" id="txt-tts-status" role="status">选择文件与发音人后开始朗读。保留原文标点，由语音引擎自然断句，不额外插入机械停顿。</p>
 <p class="subtle">指定默认声音：<strong>微软在线 HsiaoYu · zh-TW-HsiaoYuNeural</strong>，若当前环境未提供，不自动更换。</p><p class="subtle" id="txt-voice-summary">声音由浏览器和系统提供；不能伪造不存在的谷歌或微软声音。后台休眠与锁屏可能中断播放。</p>
 </section><section aria-labelledby="txt-tab-display" class="panel txt-appearance" data-pane="display" hidden="" id="txt-pane-display" role="tabpanel"><h2 id="txt-display-title">阅读主题与护眼设置</h2>
 <div class="txt-options-grid"><label>背景与护眼<select id="txt-theme"><option value="paper">柔和纸白</option><option value="white">纯白</option><option value="sepia">米黄护眼</option><option value="green">淡绿护眼</option><option value="slate">深蓝灰</option><option value="dark">深色</option><option value="black">纯黑</option><option value="contrast">高对比护眼</option></select></label>
