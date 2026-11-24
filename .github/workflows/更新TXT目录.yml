@@ -1,4 +1,4 @@
-name: 云端TXT目录保护（不重建）
+name: 完整TXT书库保护
 on:
   workflow_dispatch:
 permissions:
@@ -7,5 +7,5 @@ jobs:
   verify-mode:
     runs-on: ubuntu-latest
     steps:
-      - name: 此网站只维护远端TXT元数据
-        run: echo "1,360份正文保存在外部网盘；禁止从空的TXT本地目录重建索引。"
+      - name: 保护原始书目与正文编号
+        run: echo "固定原始索引，禁止按短文件名重建目录。"

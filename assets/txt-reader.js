@@ -1,54 +1,6 @@
 /* TXT 目录、全文检索及连续朗读。依赖 tts.js 导出的 ReaderSpeech/ReaderSpeechSegments。 */
 (function(){'use strict';
 const $=id=>document.getElementById(id), BASE='/TXT/';
-const REMOTE_ROOT='/电子书/中文/王百虎/改革宗心灵辅导TXT电子书';
-const HTTP_SOURCES=Object.freeze([
- {id:'primary',origin:'http://103.143.81.181',name:'网盘一（主线路）'},
- {id:'backup',origin:'http://85.189.89.208',name:'网盘二（备用线路）'}
-]);
-// 目录页 #drive 只用于浏览；实际 TXT 传输使用用户提供的 /api/file 接口。
-// 保留两个层级，是因为服务器实际下载链接与现有书目索引有一层目录差异。
-function filePathCandidates(entry){
- const rel=String(entry?.path||'').split('/');
- if(!rel.length||rel.some(x=>!x||x==='.'||x==='..'||x.includes('\\')||x.includes('\0'))||!String(entry?.path||'').toLowerCase().endsWith('.txt'))
-   throw Error('无效的TXT路径');
- const full=REMOTE_ROOT+'/'+rel.join('/');
- const shorter=rel[0]==='改革宗心灵辅导资料'&&rel.length>1?REMOTE_ROOT+'/'+rel.slice(1).join('/'):full;
- return [...new Set([shorter,full])];
-}
-function randomRequestId(){
- // 仅用于网盘请求关联，不作为身份凭据。
- try{const a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a,v=>v.toString(16).padStart(2,'0')).join('');}
- catch{return (Date.now().toString(16)+Math.random().toString(16).slice(2)).padEnd(32,'0').slice(0,32);}
-}
-function apiFileURL(origin,fullPath){
- if(!HTTP_SOURCES.some(x=>x.origin===origin))throw Error('不允许的TXT网盘地址');
- if(!fullPath.startsWith(REMOTE_ROOT+'/')||fullPath.split('/').some(x=>x==='.'||x==='..')||!fullPath.endsWith('.txt'))throw Error('无效的文件下载路径');
- const u=new URL('/api/file',origin);
- u.searchParams.set('path',fullPath);u.searchParams.set('download','1');u.searchParams.set('request_id',randomRequestId());
- return u.href;
-}
-function remoteFileLink(entry,backup=false,alternate=false){
- const source=HTTP_SOURCES[backup?1:0],paths=filePathCandidates(entry);
- return apiFileURL(source.origin,paths[alternate?paths.length-1:0]);
-}
-function remoteDirectoryLink(entry,backup=false){
- const source=HTTP_SOURCES[backup?1:0];
- return source.origin+'/#drive?path='+encodeURIComponent(REMOTE_ROOT+'/'+entry.path);
-}
-function supportedTarget(origin){return location.protocol!=='https:'||origin.startsWith('https:')||origin===location.origin;}
-let gatewayReady=false, workingGateways=[];
-async function probeGateway(){
- // GitHub Pages 是静态网站，不存在可凭空调用的代理；只探测同源已部署服务。
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),1600);
- try{
-  const r=await fetch(location.origin+'/api/txt/capabilities',{signal:controller.signal,cache:'no-store',credentials:'omit',mode:'cors',redirect:'error'});
-  if(!r.ok||!/(?:\/json|\+json)/i.test(r.headers.get('content-type')||''))return false;
-  const caps=await r.json();
-  if(caps?.service==='messiah-txt-bridge-v1'&&caps.online_read===true){workingGateways=[{name:'本站同源HTTPS中转',url:location.origin+'/api/txt'}];return true;}
- }catch{}finally{clearTimeout(timer);}
- return false;
-}
 async function getHttpBuffer(url,entry,signal){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),45000);
  const abort=()=>controller.abort();
@@ -58,7 +10,7 @@ async function getHttpBuffer(url,entry,signal){
   if(!response.ok)throw Error('HTTP '+response.status);
   if(response.type==='opaque'||response.redirected)throw Error('文件接口返回不可读取的结果');
   const type=(response.headers.get('content-type')||'').toLowerCase();
-  if(/text\/html|application\/xhtml\+xml/.test(type))throw Error('返回网盘页面而非TXT正文');
+  if(/text\/html|application\/xhtml\+xml/.test(type))throw Error('返回网页而非TXT正文');
   if(Number(response.headers.get('content-length'))>20_000_000)throw Error('文件超过20MB');
   const buffer=await response.arrayBuffer();
   if(buffer.byteLength>20_000_000)throw Error('文件超过20MB');
@@ -74,45 +26,8 @@ async function getHttpBuffer(url,entry,signal){
   return buffer;
  }finally{clearTimeout(timeout);signal?.removeEventListener('abort',abort);}
 }
-async function remoteBookBuffer(entry,signal){
- const paths=filePathCandidates(entry),errors=[];
- // 优先使用已经独立部署的同源代理；仅凭静态仓库不能产生这个接口。
- for(const gate of workingGateways){
-  for(const path of paths){
-   if(signal?.aborted)throw Object.assign(Error('请求取消'),{name:'AbortError'});
-   try{return await getHttpBuffer(gate.url+'/read?path='+encodeURIComponent(path),entry,signal);}
-   catch(e){if(signal?.aborted)throw e;errors.push(gate.name+'：'+e.message);}
-  }
- }
- if(location.protocol==='https:')throw Error('当前为HTTPS静态页面，但本站尚未检测到可用的同源TXT读取服务；浏览器无法直接跨域读取HTTP网盘。可运行压缩包的【本机预览完整网站.bat】使用本机同源服务，或将同源读取服务真实部署在具备HTTPS的服务器。静态GitHub仓库本身不能运行Python后端。');
- // 主服务器先尝试两种真实路径，失败再尝试备用服务器，避免双倍下载。
- for(const source of HTTP_SOURCES){
-  for(const path of paths){
-   if(signal?.aborted)throw Object.assign(Error('请求取消'),{name:'AbortError'});
-   try{return await getHttpBuffer(apiFileURL(source.origin,path),entry,signal);}
-   catch(e){if(signal?.aborted)throw e;errors.push(source.name+'：'+(e.name==='TypeError'?'网络或跨域访问受到阻止':e.name==='AbortError'?'连接超时':e.message));}
-  }
- }
- throw Error('已尝试网盘 /api/file 主备线路和两种目录路径，尚未取得符合校验的TXT正文。'+errors.join('；').slice(0,290));
-}
-function appendRealFileLinks(paper,entry){
- const notice=document.createElement('p');
- notice.className='txt-placeholder';
- notice.textContent='网页无法自动绕过网盘限制。可尝试下面的真实HTTP下载链接；下载后用上方“打开刚下载的单份TXT”阅读。要自动站内读取，请先运行压缩包中的【本机预览完整网站.bat】；仍失败时需检查网盘服务器是否允许实际获取该文件。';
- paper.append(notice);
- for(let backup=0;backup<2;backup++){
-  const source=HTTP_SOURCES[backup],paths=filePathCandidates(entry);
-  for(let i=0;i<paths.length;i++){
-   const a=document.createElement('a');a.href=apiFileURL(source.origin,paths[i]);a.target='_blank';a.rel='noopener noreferrer';
-   a.textContent=source.name+(i?'（另一种目录路径）':'')+'：直接打开TXT文件';a.className='button secondary';
-   paper.append(a,document.createTextNode('　'));
-  }
- }
-}
-
-
 const state={entries:[],site:[],local:[],visible:[],listed:0,selected:null,paragraphs:[],nodes:[],matches:[],matchAt:-1,
-  catalog:null,remoteOnly:false,bloom:null,bloomTried:false,bookCache:new Map(),session:null,flow:0,searchToken:0,searchAbort:null,loading:0,
+  catalog:null,bloom:null,bloomTried:false,bookCache:new Map(),session:null,flow:0,searchToken:0,searchAbort:null,loading:0,
   voices:new Map(),lastVoice:'',engine:null,voiceReady:false};
 const normalize=s=>String(s||'').normalize('NFKC').toLowerCase().trim();
 const byId=new Map();
@@ -136,12 +51,10 @@ async function bookText(entry,signal){const cached=cacheGet(entry);if(cached!==u
 
 let buffer;
 if(entry.source==='local')buffer=await entry.file.arrayBuffer();
-else if(state.remoteOnly){buffer=await remoteBookBuffer(entry,signal);}
 else {
-  const response=await fetch(pathUrl(entry.path),{signal,cache:'default',credentials:'omit'});
-  if(!response.ok)throw Error('文件读取失败（'+response.status+'）：'+entry.title);
-  if(Number(response.headers.get('content-length'))>20_000_000)throw Error('远程文件超过20MB');
-  buffer=await response.arrayBuffer();
+  if(entry.bundled_path!==('books/'+String(entry.localIndex).padStart(4,'0')+'.txt'))throw Error('本站TXT映射不一致，请刷新');
+  try{buffer=await getHttpBuffer(pathUrl(entry.bundled_path),entry,signal);}
+  catch(localError){if(signal?.aborted)throw localError;throw Error('本站正文读取失败：'+localError.message+'。请核对完整网站是否已发布到主分支、本站正文文件是否存在。不会跳转到网盘。');}
 }
 if(buffer.byteLength>20_000_000)throw Error('文件超过20MB');
 if(entry.bytes>0&&buffer.byteLength!==entry.bytes)throw Error('文件大小与目录不一致，请重新生成TXT目录索引');
@@ -177,15 +90,7 @@ function highlight(i,scroll){const previous=state.nodes[state.activeIndex];if(pr
 function updateReadingTitle(entry){status('txt-current-title',entry?entry.title+'（'+entry.category+' · '+num(entry.bytes)+' 字节）':'先从左侧选择一份TXT电子书');}
 async function selectEntry(entry,opt={}){
  if(!entry)return false;const my=++state.loading; if(!opt.automatic)stopPlayback('已切换文件，朗读停止');
- if(state.remoteOnly&&entry.source==='site'&&location.protocol==='https:'&&!workingGateways.length){
-   if(my===state.loading){
-    updateReadingTitle(entry);
-    status('txt-in-page-count','该网页为HTTPS，不能直接读取HTTP网盘；下方提供真正的文件下载接口。');
-    const paper=$('txt-paper');paper.replaceChildren();appendRealFileLinks(paper,entry);
-    // 不自动弹窗或下载；让读者自行决定是否打开真实网盘地址。
-   }
-   return false;
- }
+ if(!opt.automatic){state.selected=null;state.paragraphs=[];state.nodes=[];state.activeIndex=null;state.matches=[];state.matchAt=-1;updateReadingTitle(entry);$('txt-paper').replaceChildren(makeNode('p','txt-placeholder','正在加载并校验所选正文……'));}
  status('txt-in-page-count','正在读取正文……');
  try{const text=await bookText(entry);
    if(my!==state.loading||(opt.automatic&&Number.isInteger(opt.expectedFlow)&&state.flow!==opt.expectedFlow))return false;
@@ -193,7 +98,7 @@ async function selectEntry(entry,opt={}){
    renderParagraphs();updateReadingTitle(entry);if(!opt.automatic)activateSidePane('play');status('txt-in-page-count','共'+num(state.paragraphs.length)+'段；点击段落即可朗读。');
    const encoded=encodeURIComponent(entry.path);if(!opt.automatic&&location.protocol!=='file:'){try{history.replaceState({},'',location.pathname+'?book='+encoded);}catch{ /* about:blank/strict embed: do not lose the book */ }}
    if(!opt.automatic){for(const n of $('txt-list').querySelectorAll('button[data-id]'))n.dataset.selected=String(n.dataset.id===entry.id);}return true;
- }catch(e){if(my===state.loading){status('txt-in-page-count','文件打开失败：'+e.message);const paper=$('txt-paper');paper.replaceChildren(makeNode('p','txt-placeholder','无法显示该TXT：'+e.message));if(state.remoteOnly&&entry.source==='site')appendRealFileLinks(paper,entry);}return false;}
+ }catch(e){if(my===state.loading){status('txt-in-page-count','文件打开失败：'+e.message);const paper=$('txt-paper');paper.replaceChildren(makeNode('p','txt-placeholder','无法显示该TXT：'+e.message));if(entry.source==='site'){const link=document.createElement('a');link.href=pathUrl(entry.bundled_path);link.textContent='检查本站原始TXT文件';link.target='_blank';link.rel='noopener noreferrer';paper.append(link);}}return false;}
 }
 function baseEntries(){let docs=state.entries.slice();const source=$('txt-origin').value,cat=$('txt-category').value,folder=$('txt-folder').value;
  return docs.filter(e=>(source==='all'||e.source===source)&&(!cat||e.category===cat)&&(!folder||e.folder===folder||e.folder.startsWith(folder+'/')));
@@ -213,11 +118,11 @@ function updateFilterOptions(){let c=$('txt-category').value,f=$('txt-folder').v
 function renderList(reset=true){if(reset){$('txt-list').replaceChildren();state.listed=0;}
  let slice=state.visible.slice(state.listed,state.listed+50),frag=document.createDocumentFragment();
  for(const e of slice){let b=makeNode('button','txt-file-item');b.type='button';b.dataset.id=e.id;b.dataset.selected=String(state.selected?.id===e.id);
-  const title=makeNode('strong','',e.title),desc=makeNode('small','',e.category+' · '+e.folder.replace(/^改革宗心灵辅导资料\/?/,'')+' · '+num(e.bytes)+' 字节'),src=makeNode('em','',e.source==='local'?'本机文件':'网盘TXT（按需读取）');
+  const title=makeNode('strong','',e.title),desc=makeNode('small','',e.category+' · '+e.folder.replace(/^改革宗心灵辅导资料\/?/,'')+' · '+num(e.bytes)+' 字节'),src=makeNode('em','',e.source==='local'?'本机导入':'本站完整正文');
   b.append(title,desc,src);frag.append(b);
-  if(state.remoteOnly&&e.source==='site'){
-    const a=document.createElement('a');a.href=remoteFileLink(e);a.target='_blank';a.rel='noopener noreferrer';
-    a.className='txt-direct-file';a.textContent='直接打开TXT原文件';a.title='使用网盘真实 /api/file 接口，非目录导航';
+  if(e.source==='site'){
+    const a=document.createElement('a');a.href=pathUrl(e.bundled_path);a.target='_blank';a.rel='noopener noreferrer';
+    a.className='txt-direct-file';a.textContent='直接打开TXT原文件';a.title='直接打开本站原始TXT正文';
     frag.append(a);
   }
  }
@@ -241,8 +146,7 @@ async function loadBloom(){if(state.bloomTried)return state.bloom;state.bloomTri
  const spec=state.catalog?.search_bloom;if(!spec||!Number.isInteger(spec.bytes_per_entry))return null;
  try{const r=await fetch(BASE+encodeURIComponent(spec.file),{cache:'default'});if(!r.ok)throw Error(String(r.status));const buf=await r.arrayBuffer();
    if(buf.byteLength!==state.site.length*spec.bytes_per_entry)throw Error('索引与目录不一致');
-   if(spec.sha256 && window.crypto?.subtle){const raw=new Uint8Array(await crypto.subtle.digest('SHA-256',buf));
-     const hash=Array.from(raw,x=>x.toString(16).padStart(2,'0')).join('');if(hash!==spec.sha256)throw Error('全文预筛索引校验失败');}
+   if(spec.sha256){const hash=await window.SiteRuntime.digest(new Uint8Array(buf));if(hash!==spec.sha256)throw Error('全文预筛索引校验失败');}
    state.bloom=new Uint8Array(buf);return state.bloom;
  }catch(e){status('txt-results-status','全文预筛索引暂不可用，将逐本核验（可能较慢）：'+e.message);return null;}
 }
@@ -250,9 +154,9 @@ function cancelSearch(show=true){state.searchToken++;state.searchAbort?.abort();
 async function searchContents(){const ts=queryTerms();if(!ts.length){showNames();return;}
  cancelSearch(false);const token=++state.searchToken;const controller=new AbortController();state.searchAbort=controller;setBusy(true);
  const base=baseEntries(),nameHits=base.filter(e=>nameHit(e,ts));state.visible=nameHits.slice();renderList();
- try{if(state.remoteOnly&&base.some(x=>x.source==='site'))status('txt-results-status','云端正文未随网站打包：当前支持1360份书名和分类检索；完整全文检索须另行部署经校验的远程检索索引。已导入本机TXT的全文检索仍可用。');let bloom=state.remoteOnly?null:await loadBloom();if(token!==state.searchToken)return;
+ try{let bloom=await loadBloom();if(token!==state.searchToken)return;
   const tokens=Array.from(new Set(ts.flatMap(tokenList)));
-  const candidates=base.filter(e=>(!state.remoteOnly||e.source==='local')&&!nameHit(e,ts)&&(!bloom||bloomContains(bloom,e,tokens)));
+  const candidates=base.filter(e=>!nameHit(e,ts)&&(!bloom||bloomContains(bloom,e,tokens)));
   const lower=ts.map(normalize);let checked=0;const cap=120;
   for(const e of candidates){if(token!==state.searchToken||controller.signal.aborted)return;
     try{const content=await bookText(e,controller.signal);if(lower.every(t=>normalize(content).includes(t)))state.visible.push(e);}catch(err){if(err.name==='AbortError')return;}
@@ -404,14 +308,14 @@ function installSpeech(){if(typeof window.ReaderSpeech!=='function'||!('speechSy
  });
  window.addEventListener('pagehide',()=>stopPlayback());
 }
-async function readCatalog(){try{const response=await fetch(BASE+'index.json',{cache:'no-store'});
- if(!response.ok)throw Error('状态码 '+response.status);
- const payload=await response.json();if(!payload||!Array.isArray(payload.entries)||payload.schema!=='messiah-txt-3')throw Error('索引结构错误，请重新生成目录');
- if(payload.entries.length!==payload.count)throw Error('索引数量不符');
- state.catalog=payload;state.remoteOnly=payload.remote_only===true;state.site=payload.entries.map((e,i)=>({...e,id:'site:'+e.id,localIndex:i,source:'site'}));
- if(state.remoteOnly){try{gatewayReady=await probeGateway();}catch(probeError){gatewayReady=false;workingGateways=[];console.warn('网盘接口探测不影响书目加载',probeError);}}
- status('txt-index-summary',state.remoteOnly?'已加载网盘书目 '+num(state.site.length)+' 份、'+num(payload.categories.length)+' 个分类。当前网站访问方式：'+location.protocol.replace(':','').toUpperCase()+'。'+(gatewayReady?'已发现实际HTTP TXT读取接口；点击书名将进行正文校验。':'已保存真实 /api/file 主备网盘链接；在HTTPS静态网站不能直接抓取HTTP TXT，需同源HTTPS中转才能站内在线朗读。'):'已加载网站TXT '+num(state.site.length)+' 份（按需打开）。');
- }catch(e){status('txt-index-summary','网站TXT目录处理异常（'+e.message+'）。已经取得的书目将保留；可继续选择本机文件。');}
+async function readCatalog(){try{const payload=await window.SiteRuntime.json('/TXT/index.json');
+ if(!payload||!Array.isArray(payload.entries)||payload.schema!=='messiah-txt-3')throw Error('索引结构错误，请重新生成目录');
+ if(payload.entries.length!==payload.count||payload.count!==1360)throw Error('索引数量不符');
+ if(payload.bundled!==true||payload.remote_only!==false)throw Error('当前版本不是完整内置书库');
+ state.catalog=payload;state.site=payload.entries.map((e,i)=>({...e,id:'site:'+e.id,localIndex:e.id,source:'site'}));
+ if(state.site.some(e=>e.bundled_path!==('books/'+String(e.localIndex).padStart(4,'0')+'.txt')))throw Error('本站正文路径与编号不一致');
+ status('txt-index-summary','已加载本站完整TXT '+num(state.site.length)+' 份；直接读取本站正文。');
+ }catch(e){state.site=[];status('txt-index-summary','本站书库尚未完整发布：'+e.message+'。请核对主分支和正式网站版本，不会转用网盘。');throw e;}
  rebuildEntries();
 }
 function rebuildEntries(){state.entries=[...state.site,...state.local];byId.clear();for(const e of state.entries)byId.set(e.id,e);
@@ -444,11 +348,6 @@ function installEvents(){
  $('txt-more').addEventListener('click',()=>renderList(false));
  $('txt-folder-picker').addEventListener('change',e=>{addLocalFiles(e.target.files).catch(err=>status('txt-index-summary','无法打开本机文件夹：'+err.message));});
  $('txt-single-picker')?.addEventListener('change',async e=>{try{await addLocalFiles(e.target.files);if(state.local[0])await selectEntry(state.local[0]);}catch(err){status('txt-index-summary','无法打开本机TXT：'+err.message);}});
- $('txt-test-remote')?.addEventListener('click',async()=>{const doc=state.site.find(x=>x.path.includes('5【被拒之惧】'))||state.site[0];if(!doc){status('txt-remote-status','在线目录尚未加载。');return;}
-  if(location.protocol==='https:'&&!workingGateways.length){status('txt-remote-status','当前页面为HTTPS：无法跨协议读取HTTP正文。可点击书名，通过真实 /api/file 地址直接打开；站内阅读需要同源HTTPS代理。');return;}
-  status('txt-remote-status','正在通过真实 /api/file 接口测试主备服务器，并核对字节数与SHA-256……');
-  try{const buf=await remoteBookBuffer(doc);cachePut(doc,decodeBuffer(buf,doc.encoding));status('txt-remote-status','校验成功：已从真实文件接口读取 '+num(buf.byteLength)+' 字节，现在可以点击书名阅读和朗读。');}
-  catch(e){status('txt-remote-status','读取测试未通过：'+e.message);}});
  $('txt-clear-local').addEventListener('click',()=>{if(state.session?.docs?.some(e=>e.source==='local'))stopPlayback('本机文件列表已改变，已安全停止播放');if(state.selected?.source==='local'){stopPlayback('本机文件列表已清除');state.selected=null;state.paragraphs=[];state.nodes=[];$('txt-paper').replaceChildren(makeNode('p','txt-placeholder','请从网站文件列表打开TXT，或重新选择本机文件夹。'));updateReadingTitle(null);}
   state.local=[];state.bookCache.clear();$('txt-folder-picker').value='';rebuildEntries();status('txt-index-summary','已清除本机文件列表；网站TXT仍有 '+num(state.site.length)+' 份。');});
  $('txt-paper').addEventListener('click',e=>{const p=e.target.closest('.txt-paragraph');if(p)startFromParagraph(Number(p.dataset.paragraph));});
@@ -474,8 +373,8 @@ function installDualPane(){
  activateSidePane('library');
 }
 async function init(){restoreSettings();installEvents();installSpeech();installDualPane();await readCatalog();
- const book=new URL(location.href).searchParams.get('book');let initial=state.entries.find(x=>x.path===book&&x.source==='site');
- if(!initial)initial=state.local[0]||(!state.remoteOnly?state.site[0]:null);if(initial&&!(state.remoteOnly&&initial.source==='site'))await selectEntry(initial);else status('txt-results-status','已加载1360份网盘书目：可点击书名直接从真实文件接口打开；若浏览器阻止内嵌读取，可下载后用“打开刚下载的单份TXT”继续听读。');
+ const query=new URL(location.href).searchParams,book=query.get('book'),id=query.get('id');let initial=state.entries.find(x=>x.source==='site'&&(x.path===book||(id!==null&&x.id==='site:'+id)));
+ if(initial)await selectEntry(initial);else status('txt-results-status','已加载1,360份完整书目；选择书名即可直接阅读与朗读，也可以搜索全文。');
 }
 init().catch(err=>status('txt-index-summary','TXT阅读器初始化失败：'+err.message));
 })();

@@ -1,6 +1,5 @@
 @echo off
 chcp 65001 >nul
-echo 本网站采用外部双网盘的1360份TXT正文。
-echo 禁止在没有原始TXT的情况下重建目录，以免清空书目。
-echo 现有TXT/index.json由已核验的原始书库生成，不需要打包或上传正文。
+echo 完整TXT书库已经内置；禁止重新按编号文件名生成目录。
+echo 请使用完整网站根目录的只检查完整网站.bat核验。
 pause

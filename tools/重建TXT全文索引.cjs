@@ -1,3 +1,4 @@
+// 全量发布保留原始索引及已校验的预筛索引，禁止用短文件名重建并丢失原始路径。
 /* 静态网站 TXT 递归索引。只读取 TXT/ 下 .txt；不修改任何原书正文。Node 18+。 */
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
@@ -52,4 +53,4 @@ function build(){let files=walk(TXT).sort((a,b)=>a.localeCompare(b,'zh-CN'));if(
     bloom_bytes:bloom.length,elapsed_sec:+((Date.now()-start)/1000).toFixed(2)};
   json(path.join(TXT,'index-stats.json'),stats);console.log(JSON.stringify(stats,null,2));
 }
-if(require.main===module)build();module.exports={walk,makeTerms,encodeIds};
+if(require.main===module){console.error('全量版使用固定原始书目与正文编号；不可扫描短文件名重建索引。请使用上传工具 --check 核验。');process.exitCode=2;}module.exports={walk,makeTerms,encodeIds};

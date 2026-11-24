@@ -1,5 +1,5 @@
 {
-  "build": "20261124-r25-pastoral-topics-natural-speech",
+  "build": "20261125-r27-fulltext-main-verified",
   "domain": "https.ng",
   "resource_count": 386,
   "source_sha256": "cfd457569a4047aec71430b90219372e41937f027f727dd609690826ef05d512",
@@ -12,8 +12,8 @@
   "added_resources": 31,
   "updated_resources": 9,
   "worldwide_connectivity_tested": false,
-  "site_patch": "第21轮：统一Windows启动菜单与持久错误日志；十诫10套独立深入治理、8项原著方法、32行为与反证；原57课保留；同源TXT服务独立校验。",
-  "txt_module": "added-recursive-txt-reader",
+  "site_patch": "第26轮：1,360份完整正文直接读取，发布后核验主分支和正式网站",
+  "txt_module": "bundled-fulltext-same-origin-only",
   "txt_source_files": 1360,
   "txt_source_directories": 76,
   "tts_default": "zh-TW-HsiaoYuNeural",
@@ -22,8 +22,8 @@
   "calendar": "v14_calendar_sunset_dual_time_consistency",
   "full_site_package": true,
   "published": false,
-  "counseling": "原57课继续保留并接入新自愿辅导入口；32个事实行为主题与496个待审历史候选分开。无自动罪因诊断、无救恩评分、无用户敏感信息默认留存。",
+  "counseling": "81原创专题；57课、12案例与496条研究候选保留；不自动定罪。",
   "voice_real_device_verified": false,
   "remote_txt_online_verified": false,
-  "publishing_included": false
+  "publishing_included": true
 }

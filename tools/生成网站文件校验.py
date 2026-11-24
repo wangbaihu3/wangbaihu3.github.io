@@ -15,7 +15,7 @@ for p in sorted(root.rglob('*')):
 m['files']=entries
 m['file_count']=len(entries)+1
 txt=json.loads((root/'TXT/index.json').read_text('utf-8'))
-m['txt_module']={'route':'/TXT/','manifest':'/TXT/index.json','content_root':'/TXT/','index_style':'cloud-path-index-only','txt_files':txt['count'],'txt_total_bytes':txt['total_bytes'],'text_files_are_validated_by_txt_manifest':True}
+m['txt_module']={'route':'/TXT/','manifest':'/TXT/index.json','content_root':'/TXT/','index_style':'bundled-numbered-text-with-original-paths','txt_files':txt['count'],'txt_total_bytes':txt['total_bytes'],'text_files_are_validated_by_txt_manifest':True}
 version.write_text(json.dumps(m,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
 if version.stat().st_size>190000:raise RuntimeError('网站版本清单过大，原站读取限制200KB')
 print('网站发布清单更新完成:',len(entries),'个非TXT正文文件')
