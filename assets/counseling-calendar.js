@@ -75,7 +75,7 @@
   const formatG=g=>String(g.year).padStart(4,'0')+'-'+pad(g.month)+'-'+pad(g.day);
   const rdISO=rd=>formatG(rdToG(rd));
   const parseDate=value=>{
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value)))throw Error('请输入 YYYY-MM-DD 格式的完整公历日期');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value)))throw Error('请输入完整公历日期，格式为四位年份-两位月份-两位日期');
     if(value<MIN||value>MAX)throw Error('目前支持公历1600—2400年；超出范围不推算');
     const [y,m,d]=value.split('-').map(Number);
     gToRD(y,m,d);
@@ -240,6 +240,14 @@
     selectedISO:'2026-11-23',afterSunset:false,holidayType:'all',zone:'Asia/Shanghai'
   };
   function selectMonth(year,month){state.year=year;state.month=month;}
+  const minRD=gToRD(...MIN.split('-').map(Number)),maxRD=gToRD(...MAX.split('-').map(Number));
+  function monthAllowed(year,month){const start=hToRD(year,month,1);return start<=maxRD&&start+monthLength(year,month)-1>=minRD;}
+  function syncURL(push=false){
+    const p=new URLSearchParams({date:state.selectedISO,zone:state.zone,region:state.region,view:state.view,order:state.order,hy:state.year,hm:state.month,gy:state.gYear,gm:state.gMonth});
+    if(state.afterSunset)p.set('evening','1');
+    if(state.holidayType!=='all')p.set('kind',state.holidayType);
+    try{const next=location.pathname+'?'+p.toString();if(next!==location.pathname+location.search)history[push?'pushState':'replaceState'](null,'',next);}catch{/* 日期换算不依赖浏览器是否允许更新网址。 */}
+  }
   function syncSelected(g){
     state.selectedISO=g;
     const h=hebrew(g,state.afterSunset);state.year=h.year;state.month=h.month;
@@ -302,18 +310,15 @@
     try{
       const h=hebrew(state.selectedISO,state.afterSunset),rd=selectedRD(),events=eventsOn(rd,state.region);
       out.innerHTML=`<div class="hc-result-main"><div><span class="hc-small">公历 ${esc(state.selectedISO)} ${esc(weekNames[weekday(gToRD(...state.selectedISO.split('-').map(Number)))])}</span><div class="hc-result-date">希伯来历 ${esc(h.year)}年 · ${esc(DATA[h.month].cn)} ${h.day}日</div><span class="hc-rtl" lang="he" dir="rtl">${esc(h.day+' '+DATA[h.month].he+' '+h.year)}</span></div><div class="hc-result-info"><span>${leap(h.year)?'闰年 · 13个月':'平年 · 12个月'}</span><span>${state.afterSunset?'已勾选当地日落后：日期加一':'按公历白天日期换算'}</span></div></div>
-      <div class="hc-result-events" aria-label="所选日期节期">${events.length?events.map(eventBadge).join(''):'<span class="hc-muted">所选日期没有列入本工具的主要节期。</span>'}</div>`;
+      <div class="hc-result-events" aria-label="所选日期节期">${events.length?events.map(e=>eventBadge(e)).join(''):'<span class="hc-muted">所选日期没有列入本工具的主要节期。</span>'}</div>`;
       const rows=week(state.selectedISO,state.afterSunset);
       $('calendar-week').innerHTML=rows.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.weekday)}</td><td>${esc(nameH(x))}${x.selectedEvening?' <strong class="hc-evening-mark">（选定日·日落后）</strong>':''}</td></tr>`).join('');
-      const params=new URLSearchParams({date:state.selectedISO,zone:state.zone,region:state.region,view:state.view});
-      if(state.afterSunset)params.set('evening','1');
-      try{history.replaceState(null,'','?'+params.toString());}catch{/* 本地文件无网址权限不影响换算。 */}
     }catch(e){out.textContent=e.message;$('calendar-week').replaceChildren();}
   }
   function monthSequence(){return state.order==='religious'?religiousMonths(state.year):civilMonths(state.year);}
   function renderMonthPicker(){
     const rows=monthSequence();
-    $('calendar-month-choice').innerHTML=rows.map(([m,len],idx)=>`<option value="${esc(m)}" ${m===state.month?'selected':''}>${idx+1}. ${esc(DATA[m].cn)}（${len}日）</option>`).join('');
+    $('calendar-month-choice').innerHTML=rows.map(([m,len],idx)=>`<option value="${esc(m)}" ${m===state.month?'selected':''} ${monthAllowed(state.year,m)?'':'disabled'}>${idx+1}. ${esc(DATA[m].cn)}（${len}日）${monthAllowed(state.year,m)?'':' · 超出范围'}</option>`).join('');
     $('calendar-year-choice').value=state.year;
     $('calendar-year-label').textContent=`${state.year}年 · ${leap(state.year)?'闰年13个月':'平年12个月'} · 全年${yearStart(state.year+1)-yearStart(state.year)}日`;
   }
@@ -321,7 +326,7 @@
     const rows=monthSequence();
     $('calendar-months').innerHTML=rows.map(([name,len],idx)=>{
       const d=DATA[name],rd=hToRD(state.year,name,1),end=rd+len-1;
-      return `<button class="hc-month-card ${state.month===name?'hc-active':''}" data-hc-select-month="${esc(name)}" type="button" aria-pressed="${state.month===name}"><span class="hc-month-label">${idx+1} · ${esc(d.cn)}</span><span class="hc-month-he" lang="he" dir="rtl">${esc(d.he)}</span><span class="hc-month-sub">${len}日 · ${esc(rdISO(rd))} 至 ${esc(rdISO(end))}</span><span class="hc-month-alias">又译：${esc(d.alias)}</span></button>`;
+      return `<button class="hc-month-card ${state.month===name?'hc-active':''}" data-hc-select-month="${esc(name)}" type="button" ${monthAllowed(state.year,name)?'':'disabled'} aria-pressed="${state.month===name}"><span class="hc-month-label">${idx+1} · ${esc(d.cn)}</span><span class="hc-month-he" lang="he" dir="rtl">${esc(d.he)}</span><span class="hc-month-sub">${len}日 · ${esc(rdISO(rd))} 至 ${esc(rdISO(end))}</span><span class="hc-month-alias">${monthAllowed(state.year,name)?'又译：'+esc(d.alias):'超出支持日期范围'}</span></button>`;
     }).join('');
     const p=DATA[state.month];$('calendar-month-description').textContent=p.cn+' · '+p.en+' · '+p.alias+'。'+p.note;
   }
@@ -335,7 +340,7 @@
     const isSelected=rd===(state.view==='gregorian'?gToRD(...state.selectedISO.split('-').map(Number)):selectedRD()),today=g===getTodayISO(),valid=g>=MIN&&g<=MAX;
     const label=`公历${g}；希伯来历${nameH(h)}${ev.length?'；节期'+ev.map(x=>x.title).join('、'):''}`;
     const first=state.view==='hebrew'?h.day:Number(g.slice(8,10)),second=state.view==='hebrew'?g.slice(5):DATA[h.month].cn+h.day+'日';
-    return `<button type="button" data-hc-day="${esc(g)}" class="hc-day ${isCurrent?'':'hc-outside'} ${isSelected?'hc-selected':''} ${today?'hc-today':''}" ${valid?'':'disabled'} aria-label="${esc(label)}" aria-pressed="${isSelected}"><span class="hc-day-num">${first}</span><span class="hc-day-other">${esc(second)}</span>${primary?`<span class="hc-day-events">${primary}${ev.length>2?`<span class="hc-badge hc-more">另${ev.length-2}项</span>`:''}</span>`:''}</button>`;
+    return `<button type="button" data-hc-day="${esc(g)}" class="hc-day ${isCurrent?'':'hc-outside'} ${isSelected?'hc-selected':''} ${today?'hc-today':''}" ${valid?'':'disabled'} aria-label="${esc(label)}" aria-pressed="${isSelected}"><span class="hc-day-num">${first}</span><span class="hc-day-other">${esc(second)}</span>${ev.length?`<span class="hc-day-event-count" aria-hidden="true">${ev.length}项</span>`:''}${primary?`<span class="hc-day-events">${primary}${ev.length>2?`<span class="hc-badge hc-more">另${ev.length-2}项</span>`:''}</span>`:''}</button>`;
   }
   function renderGrid(){
     const info=displayMonthStart();
@@ -344,13 +349,18 @@
     const leading=weekday(info.start),total=Math.ceil((leading+info.length)/7)*7;
     let str='';for(let i=0;i<total;i++)str+=dayCell(info.start-leading+i,i>=leading&&i<leading+info.length);
     $('calendar-day-grid').innerHTML=str;
+    const selected=hebrew(state.selectedISO,state.afterSunset),events=eventsOn(selectedRD(),state.region),detail=$('calendar-selected-detail');
+    if(detail)detail.innerHTML=`<strong>所选日期：${esc(state.selectedISO)} · ${esc(nameH(selected))}${state.afterSunset?'（日落后）':''}</strong><p>${events.length?events.map(e=>esc(e.title)+(e.days>1?' · 第'+e.dayInFestival+'日':'')).join('；'):'本工具没有列入这一天的主要节期。'}</p><button type="button" class="hc-subaction" data-hc-details>查看上方换算详情</button>`;
+    $('calendar-grid-prev').disabled=!monthTarget(-1);
+    $('calendar-grid-next').disabled=!monthTarget(1);
     document.querySelectorAll('[data-hc-view]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.hcView===state.view)));
   }
   function renderHolidayList(){
     const events=holidayList(state.year,state.region).filter(e=>state.holidayType==='all'||e.kind===state.holidayType);
     $('calendar-holidays').innerHTML=events.map(e=>{
       const start=rdISO(e.start),end=rdISO(e.end),h=rdToH(e.start);
-      return `<button type="button" class="hc-holiday-row" data-hc-jump="${esc(start)}"><span class="hc-holiday-date">${esc(start)}${e.days>1?' — '+esc(end):''}</span><span class="hc-holiday-body"><strong>${esc(e.title)}</strong><small>${esc(h.day+' '+DATA[h.month].cn)} · ${esc(kindLabel(e.kind)+(e.dateBasis==='rabbinic'?'·日期按拉比传统':'') )}</small><span class="hc-holiday-detail">${esc(e.description)}</span></span><span class="hc-holiday-arrow" aria-hidden="true">查看</span></button>`;
+      const available=e.end>=minRD&&e.start<=maxRD,jump=rdISO(Math.max(minRD,e.start));
+      return `<button type="button" class="hc-holiday-row" data-hc-jump="${esc(jump)}" ${available?'':'disabled'}><span class="hc-holiday-date">${esc(start)}${e.days>1?' — '+esc(end):''}${available?'':' · 超出范围'}</span><span class="hc-holiday-body"><strong>${esc(e.title)}</strong><small>${esc(h.day+' '+DATA[h.month].cn)} · ${esc(kindLabel(e.kind)+(e.dateBasis==='rabbinic'?'·日期按拉比传统':'') )}</small><span class="hc-holiday-detail">${esc(e.description)}</span></span><span class="hc-holiday-arrow" aria-hidden="true">查看</span></button>`;
     }).join('');
     $('calendar-holiday-count').textContent=`${events.length}项 · ${state.region==='israel'?'以色列惯例':'境外惯例'}`;
   }
@@ -360,32 +370,33 @@
     const current=$('hebrew-month').value;
     $('hebrew-month').innerHTML=entries.map(([m,len])=>`<option value="${esc(m)}" ${m===current?'selected':''}>${esc(DATA[m].cn)} · ${len}日</option>`).join('');
   }
-  function refreshAll(){
+  function refreshAll(push=true){
     renderResult();renderMonthPicker();renderGrid();renderMonthCards();renderHolidayList();
     $('calendar-region').value=state.region;
     $('calendar-order').value=state.order;
     $('calendar-festival-filter').value=state.holidayType;
+    syncURL(push);
   }
-  function goByMonth(step){
+  function monthTarget(step){
     if(state.view==='gregorian'){
       const d=new Date(Date.UTC(state.gYear,state.gMonth-1+step,1,12));
       const y=d.getUTCFullYear(),m=d.getUTCMonth()+1;
-      if(y<1600||y>2400)return;
-      state.gYear=y;state.gMonth=m;
-      const mid=rdToH(gToRD(y,m,1));state.year=mid.year;state.month=mid.month;
+      if(y<1600||y>2400)return null;
+      const mid=rdToH(gToRD(y,m,1));return {gYear:y,gMonth:m,year:mid.year,month:mid.month};
     }else{
       const rows=civilMonths(state.year).map(([m])=>m);let i=rows.indexOf(state.month)+step,y=state.year;
-      if(i<0){y--;if(y<1)return;i=civilMonths(y).length-1;}
+      if(i<0){y--;if(y<1)return null;i=civilMonths(y).length-1;}
       if(i>=rows.length){y++;i=0;}
-      const g=rdISO(hToRD(y,civilMonths(y)[i][0],1));if(g<MIN||g>MAX)return;
-      state.year=y;state.month=civilMonths(y)[i][0];
+      const month=civilMonths(y)[i][0];if(!monthAllowed(y,month))return null;
+      const g=rdToG(Math.max(minRD,hToRD(y,month,1)));return {year:y,month,gYear:g.year,gMonth:g.month};
     }
-    refreshAll();
   }
-  function renderByDate(){
-    try{state.afterSunset=$('after-sunset').checked;
-      const g=$('gregorian-date').value;parseDate(g);syncSelected(g);refreshAll();
-    }catch(e){$('calendar-result').textContent=e.message;}
+  function goByMonth(step){
+    const target=monthTarget(step);if(!target)return;Object.assign(state,target);refreshAll();
+  }
+  function renderByDate(push=true){
+    try{const g=$('gregorian-date').value;parseDate(g);state.afterSunset=$('after-sunset').checked;syncSelected(g);refreshAll(push);return true;
+    }catch(e){$('calendar-result').textContent='未换算：'+e.message;$('calendar-week').replaceChildren();return false;}
   }
   $('calendar-form').addEventListener('submit',e=>{e.preventDefault();renderByDate();});
   $('calendar-today').addEventListener('click',()=>{updateZone();try{$('gregorian-date').value=getTodayISO();updateSunsetContext(true);renderByDate();updateSunsetPreview();}catch(e){$('calendar-result').textContent=e.message;}});
@@ -396,21 +407,31 @@
   $('calendar-zone').addEventListener('change',()=>{updateZone();updateSunsetContext(true);refreshAll();});
   $('calendar-region').addEventListener('change',()=>{state.region=$('calendar-region').value;refreshAll();});
   $('calendar-order').addEventListener('change',()=>{state.order=$('calendar-order').value;refreshAll();renderReverseMonthPicker();});
-  $('calendar-festival-filter').addEventListener('change',()=>{state.holidayType=$('calendar-festival-filter').value;renderHolidayList();});
+  $('calendar-festival-filter').addEventListener('change',()=>{state.holidayType=$('calendar-festival-filter').value;renderHolidayList();syncURL(true);});
+  function chooseBrowseMonth(year,month){
+    const allowed=civilMonths(year).filter(([m])=>monthAllowed(year,m)).map(([m])=>m);
+    if(!allowed.length)return;
+    const chosen=allowed.includes(month)?month:allowed[0];
+    state.year=year;state.month=chosen;state.view='hebrew';
+    const g=rdToG(Math.max(minRD,hToRD(year,chosen,1)));state.gYear=g.year;state.gMonth=g.month;
+    $('calendar-navigation-status').textContent='';refreshAll();
+  }
   $('calendar-year-choice').addEventListener('change',()=>{
-    const y=Number($('calendar-year-choice').value);if(y<5360||y>6161||!Number.isInteger(y)){alert('本工具目前支持公历1600—2400年对应的希伯来年份。');return;}
-    const current=civilMonths(y).find(([m])=>m===state.month)?state.month:(state.month==='Adar'?'Adar II':'Adar');
-    state.year=y;state.month=current;refreshAll();
+    const y=Number($('calendar-year-choice').value);if(y<5360||y>6161||!Number.isInteger(y)){$('calendar-navigation-status').textContent='年份未更改：请输入5360—6161之间的完整希伯来年份。';$('calendar-year-choice').value=state.year;return;}
+    const current=civilMonths(y).some(([m])=>m===state.month)?state.month:(state.month==='Adar'?'Adar II':'Adar');
+    chooseBrowseMonth(y,current);
   });
-  $('calendar-month-choice').addEventListener('change',()=>{state.month=$('calendar-month-choice').value;refreshAll();});
+  $('calendar-month-choice').addEventListener('change',()=>chooseBrowseMonth(state.year,$('calendar-month-choice').value));
+  $('calendar-grid-selected')?.addEventListener('click',()=>{syncSelected(state.selectedISO);refreshAll();});
   $('calendar-grid-prev').addEventListener('click',()=>goByMonth(-1));
   $('calendar-grid-next').addEventListener('click',()=>goByMonth(1));
   document.addEventListener('click',e=>{
     const button=e.target.closest('button');if(!button)return;
     if(button.dataset.hcView){state.view=button.dataset.hcView;refreshAll();}
-    if(button.dataset.hcSelectMonth){state.month=button.dataset.hcSelectMonth;state.view='hebrew';refreshAll();$('calendar-grid-title').scrollIntoView({block:'start',behavior:'smooth'});}
-    if(button.dataset.hcDay){$('gregorian-date').value=button.dataset.hcDay;$('after-sunset').checked=false;updateSunsetContext(true);renderByDate();updateSunsetPreview();}
-    if(button.dataset.hcJump){$('gregorian-date').value=button.dataset.hcJump;$('after-sunset').checked=false;updateSunsetContext(true);renderByDate();updateSunsetPreview();state.view='hebrew';refreshAll();$('calendar-result').scrollIntoView({block:'center',behavior:'smooth'});}
+    if(button.dataset.hcSelectMonth){chooseBrowseMonth(state.year,button.dataset.hcSelectMonth);$('calendar-grid-title').focus({preventScroll:true});$('calendar-grid-title').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+    if(button.dataset.hcDay){const day=button.dataset.hcDay;$('gregorian-date').value=day;$('after-sunset').checked=false;updateSunsetContext(true);renderByDate();updateSunsetPreview();document.querySelector('[data-hc-day="'+day+'"]')?.focus({preventScroll:true});}
+    if(button.dataset.hcJump){$('gregorian-date').value=button.dataset.hcJump;$('after-sunset').checked=false;state.view='hebrew';updateSunsetContext(true);renderByDate();updateSunsetPreview();$('calendar-result').focus({preventScroll:true});$('calendar-result').scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+    if(button.dataset.hcDetails!==undefined){$('calendar-result').focus({preventScroll:true});$('calendar-result').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
   });
   $('hebrew-year').addEventListener('change',renderReverseMonthPicker);
   $('reverse-calendar').addEventListener('submit',e=>{
@@ -421,12 +442,25 @@
       result.textContent=`希伯来历${y}年${DATA[m].cn}${d}日：公历${g}（白天日期）。该宗教日通常由${start}当地日落开始，实际日落时刻取决于具体地理位置。`;
     }catch(error){result.textContent='不能换算：'+error.message;}
   });
-  const q=new URLSearchParams(location.search);
-  if([...$('calendar-zone').options].some(x=>x.value===q.get('zone')))$('calendar-zone').value=q.get('zone');
-  updateZone();
-  if(['israel','diaspora'].includes(q.get('region')))state.region=q.get('region');
-  if(['gregorian','hebrew'].includes(q.get('view')))state.view=q.get('view');
-  $('after-sunset').checked=q.get('evening')==='1';
-  $('gregorian-date').value=q.has('date')?q.get('date'):getTodayISO();
-  renderReverseMonthPicker();renderByDate();updateSunsetContext(true);updateSunsetPreview();
+  function restoreCalendarURL(){
+    const q=new URLSearchParams(location.search);
+    if([...$('calendar-zone').options].some(x=>x.value===q.get('zone')))$('calendar-zone').value=q.get('zone');
+    updateZone();
+    state.region=['israel','diaspora'].includes(q.get('region'))?q.get('region'):'diaspora';
+    state.view=q.get('view')==='gregorian'?'gregorian':'hebrew';
+    state.order=q.get('order')==='civil'?'civil':'religious';
+    state.holidayType=['biblical','traditional','fast'].includes(q.get('kind'))?q.get('kind'):'all';
+    state.afterSunset=q.get('evening')==='1';$('after-sunset').checked=state.afterSunset;
+    let date=q.get('date')||getTodayISO();
+    try{parseDate(date);$('calendar-navigation-status').textContent='';}catch{date=getTodayISO();$('calendar-navigation-status').textContent='链接中的日期无效，已显示今天；请重新选择日期。';}
+    $('gregorian-date').value=date;syncSelected(date);
+    const hy=Number(q.get('hy')),hm=q.get('hm');
+    if(Number.isInteger(hy)&&hy>=5360&&hy<=6161&&civilMonths(hy).some(([m])=>m===hm)&&monthAllowed(hy,hm)){state.year=hy;state.month=hm;}
+    const gy=Number(q.get('gy')),gm=Number(q.get('gm'));
+    if(Number.isInteger(gy)&&gy>=1600&&gy<=2400&&Number.isInteger(gm)&&gm>=1&&gm<=12){state.gYear=gy;state.gMonth=gm;}
+    const h=hebrew(date,state.afterSunset);$('hebrew-year').value=h.year;renderReverseMonthPicker();$('hebrew-month').value=h.month;$('hebrew-day').value=h.day;
+    refreshAll(false);updateSunsetContext(true);updateSunsetPreview();
+  }
+  window.addEventListener('popstate',restoreCalendarURL);
+  restoreCalendarURL();
 })(typeof window!=='undefined'?window:globalThis);

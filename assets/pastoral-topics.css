@@ -2,3 +2,26 @@
 
 /* 深度辅导正文：一切文字可直接阅读，不需要先完成表单。 */
 #article .deep-start{background:#f3f5f0;border:1px solid #dfe5d9;border-radius:8px;padding:18px 20px}.muted{color:var(--muted);font-size:14px}.heart-chain{list-style:none;margin:10px 0 18px;padding:0;display:grid;gap:0}.heart-chain li{padding:9px 12px;border-left:2px solid #8da99a;background:white;position:relative;margin-bottom:17px;line-height:1.55}.heart-chain li:not(:last-child)::after{content:"↓";position:absolute;left:13px;bottom:-20px;color:#456f5f}.heart-chain li:last-child{margin-bottom:0}.depth-nav{display:flex;gap:7px;flex-wrap:wrap}.depth-nav button{font:inherit;font-size:14px;padding:5px 9px;text-align:left;color:var(--accent);background:white;border:1px solid #bbc9bc;border-radius:5px}.depth-case{background:#fbf9f1;border-left:3px solid #b5a481;padding:14px 18px}.deep-section{scroll-margin-top:18px;padding-top:15px;border-top:1px solid #e3e6de}.deep-section h4{margin:0 0 7px;font-size:15px;color:#244d3f}.deep-section p{line-height:1.95}.self-inquiry{padding:12px 16px;background:#f7f8f4;margin:18px 0;border-radius:5px}.self-inquiry ol,.deep-section ul{padding-left:24px;margin:0}.self-inquiry li,.deep-section ul li{padding:3px 0}.practice{border-left:3px solid #6f9380;padding:9px 14px;margin:12px 0;background:#f0f4ed}.practice p{margin:0!important}.week-plan{list-style:none;padding:0;margin:10px 0}.week-plan li{display:grid;grid-template-columns:64px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #e5e8df;line-height:1.7}.week-plan strong{color:#25533f;font-size:14px}.depth-nav button:focus-visible,.deep-section:focus-visible{outline:2px solid #aa9450;outline-offset:3px}@media(max-width:440px){#article .deep-start{padding:12px}.depth-case{padding:12px}.self-inquiry{padding:10px 12px}.week-plan li{grid-template-columns:54px 1fr}.depth-nav button{width:100%}}@media print{.depth-nav{display:none}.deep-section,.self-inquiry,.practice{break-inside:avoid-page}.heart-chain li{break-inside:avoid}}
+
+/* 文章目录、来源分层与逐题深化。 */
+.article-tools{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:14px}.article-tools button{background:white;color:#215c4c;border:1px solid #b8cabe;border-radius:5px;padding:8px 12px;min-height:40px}.article-tools span{overflow-wrap:anywhere}
+.article-toc{padding:14px 17px;background:#f3f6f2;border:1px solid #ccd8ca;border-radius:7px}.article-toc summary{cursor:pointer;font-weight:700}.article-toc button{border:0;background:transparent;text-align:left;color:#235946;padding:8px 10px;min-height:40px;font:inherit;font-size:14px}.article-toc>div{display:grid;grid-template-columns:1fr 1fr;margin-top:10px}
+.topic-enrichment{border-top:3px solid #5f8b74;padding-top:22px}.topic-enrichment h4{font-size:18px;color:#244d3e;margin-bottom:8px}.topic-enrichment li{padding:5px 0}.topic-enrichment section{margin-top:22px!important}
+.card small,.article-kicker,.sectionhead span,.eyebrow,.audio p,footer{font-size:14px}.card p{font-size:16px}.card{min-height:150px}.quick button{font-size:14px;min-height:42px}.categories button{min-height:42px}.sectionhead h2:focus{outline:2px solid #4c7b64;outline-offset:3px}
+.topic-actions button,.topic-actions a{min-height:42px}#article section{scroll-margin-top:20px}.help{font-size:15px}.help button,.help strong{font-size:15px}.depth-nav button{min-height:42px}.audio label{max-width:100%}
+@media(max-width:600px){.article-toc>div{grid-template-columns:1fr}.card p{font-size:15px}.sidebar{padding:14px}.topic-enrichment h4{font-size:17px}}
+@media print{.article-tools,.article-toc,.depth-nav{display:none!important}.deep-section,.self-inquiry,.practice{break-inside:auto!important}h3,h4{break-after:avoid}.source-note{display:block}}
+
+.remote-voice-option{display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:1.8;margin-top:12px}.remote-voice-option input{margin-top:5px;min-width:18px;min-height:18px}
+
+/* 专题正文优先；长题、真实语音名称与窄屏控件正常换行。 */
+.sidebar,.layout>*{min-width:0}
+.card{overflow-wrap:anywhere}
+.card:focus-visible,.categories button:focus-visible,.article-nav button:focus-visible{outline:3px solid #173a68;outline-offset:3px}
+.article-nav button{min-height:44px;padding:8px 0;text-align:left}
+.audio-row button{min-height:44px}
+.audio-row select{max-width:100%;width:min(100%,320px);min-height:44px;font-size:14px}
+.audio-row label{display:flex;align-items:center;gap:8px;font-size:14px}
+.audio button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:600px){.audio-row{align-items:stretch}.audio-row select{width:100%}.audio-row button{flex:1 1 120px}.audio-row label{flex:1 1 140px}.article-tools button{min-height:44px}.article-nav{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

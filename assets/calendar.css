@@ -18,3 +18,24 @@
 .hc-confirm-local input{width:18px;height:18px;min-width:18px;margin:3px 0 0;accent-color:#155484}
 .hc-sunset-zone-warning{font-size:.93rem;line-height:1.65;color:#7b3217;background:#fff5e9;border-inline-start:3px solid #bf6c38;padding:8px 12px;margin:8px 0;overflow-wrap:anywhere}
 .hc-evening-mark{font-size:.85em;font-weight:700;color:#175478}
+
+/* 小屏显示可辨日期与节期项数，完整节期随所选日期呈现。 */
+.hc-day-event-count{display:none}
+.hc-selected-detail{margin-top:14px;border:1px solid #b7cbdc;border-radius:7px;background:#f0f5fa;padding:14px 16px;line-height:1.75}
+.hc-selected-detail p{margin:7px 0;font-size:16px}
+.hc-app button:disabled{cursor:not-allowed;opacity:.45}
+.hc-gridnav{flex-wrap:wrap}
+.hc-app .hc-holiday-body small,.hc-app .hc-holiday-detail,.hc-app .hc-holiday-date,.hc-app .hc-month-sub,.hc-app .hc-month-alias,.hc-app .hc-result-info,.hc-app .hc-small,.hc-app .hc-year-note{font-size:14px}
+.hc-app .hc-day-events .hc-badge{font-size:12px;line-height:1.4}
+.hc-app .hc-badge{white-space:normal;text-overflow:clip}
+.hc-app .hc-overline,.hc-app .hc-controlbar label,.hc-app .hc-gridbar p,.hc-app .hc-weeknames div{font-size:14px}
+.hc-app #calendar-result:focus,.hc-app #calendar-grid-title:focus{outline:2px solid var(--hc-blue);outline-offset:5px}
+@media(max-width:600px){.hc-app .hc-day-events{display:none}.hc-app .hc-day-event-count{display:inline-block;font-size:12px;line-height:1.4;color:#12365f;background:#e3edf5;border-radius:3px;padding:1px 3px}.hc-app .hc-day{min-height:83px;padding:5px 2px;align-items:center}.hc-app .hc-day-num{font-size:18px}.hc-app .hc-day-other{font-size:12px;overflow-wrap:anywhere;text-align:center}.hc-app .hc-day.hc-outside{opacity:.65}.hc-selected-detail{padding:12px}.hc-app .hc-holiday-row{grid-template-columns:minmax(0,1fr);gap:5px}.hc-app .hc-month-card{min-height:150px}.hc-app .hc-fields{grid-template-columns:repeat(auto-fit,minmax(min(100%,158px),1fr))}}
+@media(prefers-reduced-motion:reduce){.hc-app *{scroll-behavior:auto!important}}
+@media print{.hc-app .hc-pane{break-inside:auto}.hc-app button.hc-day,.hc-app button.hc-month-card{display:flex!important;color:#000;border:1px solid #777;opacity:1}.hc-app button.hc-holiday-row{display:grid!important;color:#000;break-inside:avoid;opacity:1}.hc-app .hc-day-events{display:flex!important}.hc-app .hc-day-event-count,.hc-selected-detail button,.hc-sunset-tool{display:none!important}.hc-app .hc-holiday-row:disabled,.hc-app .hc-month-card:disabled{display:none!important}.hc-app .hc-gridnav,.hc-app .hc-controlbar{display:none!important}.hc-app .hc-month-card{break-inside:avoid}}
+
+/* 日期换算与月历相邻；可选日落估算保留在原位置的折叠面板中。 */
+.hc-hero{margin-top:10px;padding:20px 24px}.hc-hero h1{font-size:28px}.hc-hero .hc-overline{font-size:14px;letter-spacing:0}.hc-section-links{display:flex;flex-wrap:wrap;gap:8px 18px;margin:12px 0 18px}.hc-section-links a{display:inline-flex;align-items:center;min-height:42px;font-size:15px;color:#12365f}.hc-sunset-tool summary{font-weight:700;cursor:pointer;min-height:32px;line-height:1.8}.hc-sunset-tool[open] summary{margin-bottom:10px}.hc-conversion .hc-result{margin-top:18px;padding-top:16px;border-top:1px solid #d9e4ed}.hc-app h2[id]{scroll-margin-top:18px}
+@media(min-width:1100px){.hc-workbench{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}.hc-workbench>.hc-pane{margin:0;padding:18px}.hc-conversion .hc-fields,.hc-conversion .hc-sunset-controls{grid-template-columns:minmax(0,1fr)}.hc-conversion .hc-result-date{font-size:24px}.hc-workbench .hc-control-group{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:8px}.hc-workbench .hc-control-group label{min-width:0}.hc-workbench .hc-control-group select,.hc-workbench .hc-control-group input{max-width:none;font-size:14px}.hc-workbench .hc-title-row{gap:4px}.hc-workbench .hc-title-row h2{font-size:23px}.hc-workbench .hc-day{min-height:90px}.hc-workbench .hc-toggle{margin-top:6px}}
+@media(max-width:600px){.hc-hero{padding:16px}.hc-hero h1{font-size:24px}.hc-section-links{gap:4px 14px}.hc-section-links a{font-size:14px}.hc-conversion .hc-result{margin-top:14px}}
+@media print{.hc-workbench{display:block}.hc-section-links{display:none!important}}

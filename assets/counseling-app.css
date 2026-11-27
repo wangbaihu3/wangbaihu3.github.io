@@ -166,3 +166,6 @@
 .site-hub .main-site{font-family:SimSun,'Songti SC',serif;font-size:17px;font-weight:800}
 .site-endnote{border-top:1px solid #c8d8e3;color:#496071;padding:18px;text-align:center;font-size:13px}
 .site-endnote a{color:#254f75}
+
+/* 研究区检索与键盘操作：避免小字和失焦。 */
+#view .field label,#view .mini-muted{font-size:.875rem}#view .book-title-btn{min-height:44px}#view .field input,#view .field select{font-size:1rem;min-height:44px}#view button:focus-visible,#view input:focus-visible,#view select:focus-visible{outline:3px solid #9f293b;outline-offset:3px}

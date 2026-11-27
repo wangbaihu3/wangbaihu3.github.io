@@ -1,8 +1,8 @@
 (function(){'use strict';
   const $=id=>document.getElementById(id);
   $('clear-local-data').addEventListener('click',()=>{
-    try{for(const key of ['messiah-favorites-v1','messiah-bible-position','messiah-tts-position','messiah-directory-history-v1'])localStorage.removeItem(key);
-      $('clear-data-status').textContent='已清除本浏览器的本站收藏、搜索历史和阅读位置；其他打开的页面会同步清除。浏览历史与服务器日志不在本按钮控制范围。';
+    try{for(const key of ['messiah-favorites-v1','messiah-bible-position','messiah-tts-position','messiah-directory-history-v1','messiah-bible-audio-plan','messiah-txt-last-position','messiah-txt-settings-v1','messiah-tts-voice-preference-v3','messiah-bible-reading-settings-v1','messiah-tts-playback-v1'])localStorage.removeItem(key);
+      $('clear-data-status').textContent='已清除本浏览器的本站收藏、搜索历史和阅读位置；其他页面请刷新后查看清除结果。浏览历史与服务器日志不在本按钮控制范围。';
     }catch{$('clear-data-status').textContent='当前浏览器不允许访问本地存储。';}
   });
   const button=$('verify-release');

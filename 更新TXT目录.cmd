@@ -1,5 +1,7 @@
 @echo off
 chcp 65001 >nul
-echo 完整TXT书库已经内置；禁止重新按编号文件名生成目录。
-echo 请使用完整网站根目录的只检查完整网站.bat核验。
+cd /d "%~dp0"
+echo 本包保留1360条书目，不附带原始TXT正文。
+echo 请使用完整包根目录的“只核验.bat”检查网站。
+echo 不要用空TXT文件夹重新生成书目。
 pause

@@ -2,11 +2,14 @@
   "source": "用户原始正文逐字节复核；旧全文预筛索引与书目顺序、散列一致",
   "txt_files": 1360,
   "txt_bytes_source": 226008955,
-  "txt_bytes_in_site": 226008955,
+  "txt_bytes_in_site": 0,
   "category_count": 22,
   "folder_count": 76,
   "index_bytes": 937336,
   "bloom_bytes": 22282240,
   "remote_only": false,
-  "fulltext_index_available": true
+  "fulltext_index_available": true,
+  "source_corpus_bytes": 226008955,
+  "bundled_txt_bodies": 0,
+  "note": "本包保留原书目和预筛索引；原始TXT正文不随包提供。source_corpus_bytes为原始资料总量。"
 }

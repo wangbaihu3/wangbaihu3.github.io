@@ -1,4 +1,4 @@
-/* Bounded speech queue. Pause resumes from the start of the current short segment. */
+/* Bounded speech queue with native pause/resume and one continuous sleep deadline. */
 (function (root) {
   'use strict';
   class ReaderSpeech {
@@ -99,7 +99,7 @@
     move(delta) { if (this.items.length) this.play(Math.max(0, Math.min(this.items.length - 1, this.index + delta))); }
     setTimer(minutes) {
       clearTimeout(this.sleep); this.sleep = null;
-      if (Number.isFinite(minutes) && minutes > 0 && minutes <= 120) this.sleep = setTimeout(() => this.stop(), minutes * 60000);
+      if (Number.isFinite(minutes) && minutes > 0 && minutes <= 120) this.sleep = setTimeout(() => {this.stop();this.notify('已到定时停止时间');}, minutes * 60000);
     }
   }
   // Streaming iteration avoids materialising a document-sized grapheme array.
@@ -165,16 +165,28 @@
           Promise.resolve().then(() => { if (expected === preparation && engine.state === 'ended') flowHooks.onChapterEnd(); });
         }
         if (state.state === 'error') flowHooks?.onError?.(state.message);
+        if (state.message === '已到定时停止时间') {sleepDeadline=null;flowHooks?.onStop?.();}
         $('tts-pause').disabled = !['playing','paused'].includes(state.state);
+        $('tts-pause').textContent = state.state==='paused'?'继续朗读':'暂停朗读';
+        $('tts-prev').disabled = !state.total;
+        $('tts-next').disabled = !state.total;
       },
       onSegment(item, index) {
         clearHighlight(); highlight = item.element || null; highlight?.classList.add('current-audio');
+        document.dispatchEvent(new CustomEvent('reader-speech-segment',{detail:{element:highlight,index}}));
         try { if (item.persist !== false) localStorage.setItem('messiah-tts-position', JSON.stringify({schema:5, context:context(), index, id:item.id, saved:Date.now()})); } catch {}
       }
     });
     // 本站公开经文朗读按用户要求默认允许浏览器联网声音；用户可关闭，点击播放后才会调用服务。
-    $('tts-remote').checked = true;
-    engine.allowRemote = true;
+    let playbackSettings={remote:true,rate:1,volume:1};
+    try{const saved=JSON.parse(localStorage.getItem('messiah-tts-playback-v1')||'null');if(saved&&typeof saved==='object'){
+      if(typeof saved.remote==='boolean')playbackSettings.remote=saved.remote;
+      if(Number.isFinite(saved.rate)&&saved.rate>=.5&&saved.rate<=2)playbackSettings.rate=saved.rate;
+      if(Number.isFinite(saved.volume)&&saved.volume>=0&&saved.volume<=1)playbackSettings.volume=saved.volume;
+    }}catch{}
+    const savePlaybackSettings=()=>{try{localStorage.setItem('messiah-tts-playback-v1',JSON.stringify({remote:$('tts-remote').checked,rate:Number($('tts-rate').value),volume:Number($('tts-volume').value)}));}catch{}};
+    $('tts-remote').checked=playbackSettings.remote;engine.allowRemote=playbackSettings.remote;
+    $('tts-rate').value=playbackSettings.rate;$('tts-rate-value').textContent=playbackSettings.rate.toFixed(1);$('tts-volume').value=playbackSettings.volume;
     const voiceSelect = $('tts-voice'), providerSelect = $('tts-provider');
     let actualVoices = [], availableOptions = new Map();
     const policy=root.SpeechVoicePolicy;
@@ -210,7 +222,7 @@
       }
       const decision=policy ? policy.choose(list,$('tts-remote').checked) : {voice:null,reason:'未加载默认小雨声音选择规则'};
       voiceSelect.value=decision.voice?voiceKey(decision.voice):'';
-      if (previous && (!decision.voice || voiceKey(previous)!==voiceKey(decision.voice))) {++preparation;engine.stop();}
+      if (previous && (!decision.voice || voiceKey(previous)!==voiceKey(decision.voice))) {++preparation;engine.stop();flowHooks?.onStop?.();}
       selectActualVoice();
       if ($('tts-voice-summary')) {
         $('tts-voice-summary').textContent = '本浏览器返回 ' + actualVoices.length + ' 个声音：微软 ' + counts.microsoft + '、谷歌 ' + counts.google + '、其他 ' + counts.other + '。' +
@@ -226,13 +238,13 @@
     if (providerSelect) providerSelect.addEventListener('change', () => { ++preparation; engine.stop(); engine.setVoice(null); voiceSelect.value = ''; flowHooks?.onStop?.(); voices(); });
     $('tts-refresh')?.addEventListener('click', voices);
     $('tts-default')?.addEventListener('click', () => {policy?.reset();providerSelect.value='all';voices();$('tts-status').textContent='已恢复小雨优先策略；若当前没有小雨，将明确显示所使用的中文备选声音。';});
-    $('tts-remote').addEventListener('change', () => { ++preparation; engine.stop(); engine.allowRemote = $('tts-remote').checked; flowHooks?.onStop?.(); voices(); });
-    $('tts-rate').addEventListener('input', () => { engine.rate = Number($('tts-rate').value); $('tts-rate-value').textContent = engine.rate.toFixed(1); });
-    $('tts-volume').addEventListener('input', () => { engine.volume = Number($('tts-volume').value); });
+    $('tts-remote').addEventListener('change', () => { ++preparation; engine.stop(); engine.allowRemote = $('tts-remote').checked; savePlaybackSettings();flowHooks?.onStop?.(); voices(); });
+    $('tts-rate').addEventListener('input', () => { engine.rate = Number($('tts-rate').value); $('tts-rate-value').textContent = engine.rate.toFixed(1);savePlaybackSettings(); });
+    $('tts-volume').addEventListener('input', () => { engine.volume = Number($('tts-volume').value);savePlaybackSettings(); });
     $('tts-timer').addEventListener('change', () => { const m=Number($('tts-timer').value); sleepDeadline=m>0?Date.now()+m*60000:null; engine.setTimer(m); });
     function items() { return provider().flatMap((item, p) => speechSegments(item.text, 240).map((seg, i) => ({...item, ...seg, id:(item.id || 'paragraph-' + p) + '-segment-' + i}))).filter(x => x.text.trim()); }
-    async function prepare() {
-      const token=++preparation,rows=[],source=provider(); engine.stop();
+    async function prepare(token) {
+      const rows=[],source=provider(); engine.stop();
       $('tts-status').textContent='正在准备朗读短段……';
       for(let p=0;p<source.length;p++){
         if(token!==preparation)return null;
@@ -271,14 +283,19 @@
       return ok;
     }
     async function playCurrent(continuation=false) {
+      const token=++preparation;
       try {
-        const rows=await prepare();
+        const rows=await prepare(token);
+        // An older cancelled preparation must not stop or overwrite the newer plan.
+        if(token!==preparation)return false;
         if(!rows || !rows.length) {
           if (rows) $('tts-status').textContent='本章没有可以朗读的正文；未跳过本章';
+          flowHooks?.onStop?.();
           return false;
         }
-        return begin(0,rows,continuation);
+        const started=begin(0,rows,continuation);if(!started)flowHooks?.onStop?.();return started;
       } catch(error) {
+        if(token!==preparation)return false;
         engine.clear(); $('tts-status').textContent='无法准备朗读：'+error.message;
         flowHooks?.onError?.(error.message); return false;
       }
@@ -291,19 +308,25 @@
     });
     $('tts-pause').addEventListener('click', () => engine.pauseResume());
     $('tts-stop').addEventListener('click', () => {++preparation;sleepDeadline=null;engine.stop();flowHooks?.onStop?.();});
-    $('tts-prev').addEventListener('click',()=>{++preparation;engine.move(-1);if(engine.state==='playing')engine.setTimer(Number($('tts-timer').value));});
-    $('tts-next').addEventListener('click',()=>{++preparation;engine.move(1);if(engine.state==='playing')engine.setTimer(Number($('tts-timer').value));});
+    function moveSpeech(delta){
+      ++preparation;
+      if(sleepDeadline!==null&&Date.now()>=sleepDeadline){engine.stop();flowHooks?.onStop?.();$('tts-status').textContent='已到定时停止时间';return;}
+      engine.move(delta);if(engine.state==='playing'&&sleepDeadline!==null)engine.setTimer((sleepDeadline-Date.now())/60000);
+    }
+    $('tts-prev').addEventListener('click',()=>moveSpeech(-1));
+    $('tts-next').addEventListener('click',()=>moveSpeech(1));
     $('tts-restore').addEventListener('click', async () => {
       let saved; try { saved = JSON.parse(localStorage.getItem('messiah-tts-position') || 'null'); } catch {}
       try { if (flowHooks?.beforeStart && await flowHooks.beforeStart({resume:true,saved}) === false) return; }
-      catch(e) { $('tts-status').textContent='恢复定位失败：'+e.message;return; }
-      let rows;try{rows=await prepare();}catch(e){$('tts-status').textContent='朗读准备失败：'+e.message;return;}if(!rows)return;
-      if (!saved || ![4,5].includes(saved.schema) || saved.context !== context()) { $('tts-status').textContent = '没有与当前版本、章节和朗读模式一致的听读记录。'; return; }
+      catch(e) { $('tts-status').textContent='恢复定位失败：'+e.message;flowHooks?.onStop?.();return; }
+      const token=++preparation;
+      let rows;try{rows=await prepare(token);}catch(e){if(token!==preparation)return;$('tts-status').textContent='朗读准备失败：'+e.message;flowHooks?.onStop?.();return;}if(token!==preparation)return;if(!rows){flowHooks?.onStop?.();return;}
+      if (!saved || ![4,5].includes(saved.schema) || saved.context !== context()) { $('tts-status').textContent = '没有与当前版本、章节和朗读模式一致的听读记录。';flowHooks?.onStop?.(); return; }
       const legacy = saved.schema === 4;
       const restoredId=legacy?String(saved.id||'').replace(/-segment-\d+$/, '-segment-0'):saved.id;
       const index = rows.findIndex(item => item.persist !== false && item.id === restoredId);
-      if (index < 0) { $('tts-status').textContent = '保存的段落已不在当前文稿中，未按旧序号猜测位置。'; return; }
-      begin(index, rows, false);
+      if (index < 0) { $('tts-status').textContent = '保存的段落已不在当前文稿中，未按旧序号猜测位置。';flowHooks?.onStop?.(); return; }
+      if(!begin(index, rows, false))flowHooks?.onStop?.();
       if(legacy)$('tts-status').textContent='分段规则已更新，从旧记录对应经节或段落的开头继续。';
     });
     engine.rate=Number($('tts-rate').value)||1;engine.volume=Number($('tts-volume').value);
@@ -311,7 +334,9 @@
     window.addEventListener('pagehide', () => {++preparation;engine.clear();flowHooks?.onStop?.();});
     return {
       engine,
-      setProvider(fn, ctx) { ++preparation; engine.clear(); provider = fn; if (ctx) context = ctx; },
+      setProvider(fn, ctx) { ++preparation; engine.clear(); provider = fn; if (ctx) context = ctx;
+        try{if(provider().length)$('tts-status').textContent='正文已准备，可选择声音后开始朗读。';}catch{}
+      },
       setFlowHooks(hooks) { flowHooks = hooks || null; },
       playCurrent: () => playCurrent(true),
       stop:() => { ++preparation; sleepDeadline=null; engine.stop(); flowHooks?.onStop?.(); },

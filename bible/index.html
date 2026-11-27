@@ -1,14 +1,156 @@
-<!DOCTYPE html>
-
-<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'" http-equiv="Content-Security-Policy"/><meta content="width=device-width,initial-scale=1" name="viewport"/><meta content="light" name="color-scheme"/><meta content="#102c52" name="theme-color"/><title>圣经阅读｜弥赛亚改革宗神学翻译网</title><meta content="改革宗与福音派资源，原文审校直译本阅读，双历对照与文字朗读。" name="description"/><link href="https://https.ng/bible/" rel="canonical"/><link href="/assets/app.css?v=20261125-r28-sevenfold-pastoral-depth" integrity="sha384-XSWEdFrNhY+dFgkxzFaEPu0HpGumUc2jCooQoK4NHnwwlL7FQ9jMoq7ipflt/gr0" rel="stylesheet"/><meta content="no-referrer" name="referrer"/><meta content="20261125-r28-sevenfold-pastoral-depth" name="site-build"/></head><body><a class="skip" href="#main">跳至正文</a><header><div class="shell masthead"><a class="brand" href="/"><strong>弥赛亚</strong><span>改革宗神学翻译网</span></a><nav aria-label="主导航"><a href="/">首页</a><a href="/navigation/">分类导航</a><a aria-current="page" href="/bible/">圣经阅读</a><a href="/calendar/">双历对照</a><a href="/#downloads">书籍下载</a><a href="/TXT/">TXT书籍朗读</a><a href="/counseling/">圣经辅导</a></nav></div></header><main class="shell" id="main"><noscript><p class="notice">逐章经文加载和朗读需要启用 JavaScript；此时的空白不表示母稿缺少经文。</p></noscript><section class="intro compact"><p class="eyebrow">正文、原注与版本分开</p><h1>原文圣经审校直译本</h1><p class="lead">撒迦利亚王百虎译注 · 持续审校稿的只读网页快照</p><div class="actions"><a class="button" href="http://103.143.81.181/#drive?path=%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F2026%2F2026%E5%B9%B410%E6%9C%88%2F%E7%AC%AC%E4%BA%8C%E7%89%88" target="_blank" rel="noopener noreferrer">原文审校直译本第二版：资料库直接下载（无需微软账号）</a><a class="button secondary" href="https://shtvu-my.sharepoint.com/:f:/r/personal/today_onedrivechina_cn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Ftoday%5Fonedrivechina%5Fcn%2FDocuments%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F2026%2F2026%E5%B9%B410%E6%9C%88%2F%E7%AC%AC%E4%BA%8C%E7%89%88&amp;share=cgqMIMN1HOf2TbhWaRPDG9HwEgUBf6%2DUmxjV7Ma8DqmzOm%2DfJQ" target="_blank" rel="noopener noreferrer">第二版：微软网盘备用（可能要求登录）</a></div><p class="subtle">首选资料库链接无需微软账户，但仍以实际外部服务器开放情况为准；微软备份链接是否要求登录由分享者权限决定。本站在线阅读仍为已注明版本的只读快照；两者不保证即时同步，下载前请核对文件版本。</p><p class="subtle" id="bible-meta">正在加载当前快照说明……</p></section><section class="panel"><div class="filters"><label>书卷<select aria-label="书卷" id="bible-book"></select></label><label>章<select aria-label="章" id="bible-chapter"></select></label><label>字号<select id="reading-size"><option value="20">标准</option><option value="24">大字</option><option value="28">更大</option></select></label><label class="inline"><input checked="" id="show-notes" type="checkbox"/>显示本章原注</label></div><div class="actions"><button class="secondary" id="prev-chapter">上一章</button><button class="secondary" id="next-chapter">下一章</button><button class="secondary" id="resume-reading">恢复阅读位置</button><button class="secondary" id="copy-location">复制本章链接</button><a href="/bible/about/">凡例与附录</a></div><form class="searchbox" id="bible-search-form"><label for="bible-query">查找经文（首次使用才下载全文文字索引）</label><div class="row"><input id="bible-query" maxlength="240" placeholder="关键词，或 创世记 1:1 / Gen 1:1" type="search"/><button>查找</button></div></form><div aria-live="polite" id="bible-search-results" role="status"></div></section><section aria-label="朗读播放器" class="panel tts" id="tts-panel"><h2>圣经朗读</h2><div class="bible-audio-plan" role="group" aria-label="连续朗读范围">
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'" http-equiv="Content-Security-Policy">
+<meta content="width=device-width,initial-scale=1" name="viewport">
+<meta content="light" name="color-scheme">
+<meta content="#102c52" name="theme-color">
+<title>圣经阅读｜弥赛亚改革宗神学翻译网</title>
+<meta content="改革宗与福音派资源，原文审校直译本阅读，双历对照与文字朗读。" name="description">
+<link href="https://https.ng/bible/" rel="canonical">
+<link href="/assets/app.css?v=20261128-r30-reader-workspace" integrity="sha384-XSWEdFrNhY+dFgkxzFaEPu0HpGumUc2jCooQoK4NHnwwlL7FQ9jMoq7ipflt/gr0" rel="stylesheet" crossorigin="anonymous">
+<meta content="no-referrer" name="referrer">
+<meta content="20261128-r30-reader-workspace" name="site-build">
+<link rel="stylesheet" href="/assets/site-navigation.css?v=20261128-r30-reader-workspace" integrity="sha384-KM6BR2ve2voOpNIclbWyL3SlyDrQHNgXDGhHOhEV524mwBbwmXobuwxWLKmUK51R" crossorigin="anonymous">
+<link rel="stylesheet" href="/assets/bible-reader.css?v=20261128-r30-reader-workspace" integrity="sha384-u1WJF2dtceV3RHAn1VI3D69m2nYgzhKJ/5Bhc5BfuXsf/shTYC9qOhpkErKH7xvK" crossorigin="anonymous">
+</head>
+<body class="bible-page">
+<a class="skip" href="#main">跳至正文</a><header class="site-header" data-site-header="true"><div class="site-head-inner">
+<a class="site-brand" href="/"><strong>弥赛亚</strong><span>改革宗神学翻译网</span></a><nav class="site-main-nav" aria-label="全站主导航"><a href="/">首页</a><a href="/navigation/">资源导航</a><a href="/bible/" aria-current="page">圣经阅读</a><a href="/counseling/">圣经辅导</a><a href="/calendar/">双历对照</a><a href="/TXT/">书籍阅读</a></nav>
+</div></header><nav class="site-breadcrumb" aria-label="当前位置"><span><a href="/">首页</a></span><span aria-current="page">圣经阅读</span></nav><main class="bible-shell" id="main"><div class="bible-titlebar">
+<div>
+<h1>圣经阅读</h1>
+<p>原文审校直译本 · 撒迦利亚王百虎译注</p>
+</div>
+<a href="/bible/about/">凡例与附录</a>
+</div>
+<noscript><p class="notice">逐章经文与朗读需要启用网页脚本。下载入口与版本说明仍可查看。</p></noscript>
+<section class="bible-workspace" id="reader-workspace" aria-label="圣经阅读工作区">
+  <aside class="bible-controls" id="bible-controls" aria-label="目录、查找与阅读设置">
+    <div class="reader-side-heading">
+<h2 id="controls-heading">目录与设置</h2>
+<button type="button" id="close-reader-controls" class="secondary">返回正文</button>
+</div>
+    <div class="reader-tabs" role="tablist" aria-label="阅读工具">
+      <button type="button" role="tab" id="reader-tab-chapters" aria-selected="true" aria-controls="reader-panel-chapters" tabindex="0" data-reader-tab="chapters">选章</button>
+      <button type="button" role="tab" id="reader-tab-search" aria-selected="false" aria-controls="reader-panel-search" tabindex="-1" data-reader-tab="search">查找</button>
+      <button type="button" role="tab" id="reader-tab-audio" aria-selected="false" aria-controls="reader-panel-audio" tabindex="-1" data-reader-tab="audio">朗读</button>
+      <button type="button" role="tab" id="reader-tab-settings" aria-selected="false" aria-controls="reader-panel-settings" tabindex="-1" data-reader-tab="settings">设置</button>
+    </div>
+    <div class="reader-side-scroll">
+      <section id="reader-panel-chapters" role="tabpanel" aria-labelledby="reader-tab-chapters">
+        <div class="reader-selects">
+<label for="bible-book">书卷<select id="bible-book" aria-label="书卷"></select></label><label for="bible-chapter">章<select id="bible-chapter" aria-label="章"></select></label>
+</div>
+        <p class="subtle" id="chapter-grid-label">选择本卷章节</p>
+<nav class="chapter-grid" id="chapter-grid" aria-labelledby="chapter-grid-label"></nav>
+        <div class="reader-saved">
+<button type="button" class="secondary" id="resume-reading">恢复上次阅读</button><p class="subtle" id="saved-reading-label">尚无本机阅读记录。</p>
+</div>
+      </section>
+      <section id="reader-panel-search" role="tabpanel" aria-labelledby="reader-tab-search" hidden>
+        <form class="searchbox" id="bible-search-form">
+<label for="bible-query">经文关键词或章节</label><div class="row">
+<input id="bible-query" type="search" maxlength="240" placeholder="例如：创世记 1:1，或 恩典"><button type="submit">查找</button>
+</div>
+<p class="subtle">支持简繁文字。关键词检索首次使用时加载全文索引。</p>
+</form>
+        <div id="bible-search-results" role="status" aria-live="polite"></div>
+      </section>
+      <section id="reader-panel-audio" role="tabpanel" aria-labelledby="reader-tab-audio" hidden><section aria-label="朗读播放器" class="tts reader-voice" id="tts-panel"><h2>朗读设置</h2>
+<div class="bible-audio-plan" role="group" aria-label="连续朗读范围">
   <div class="filters">
     <label for="bible-tts-scope">朗读范围<select id="bible-tts-scope">
-      <option value="chapter">本章</option><option value="book">本卷（自动跨章）</option>
-      <option value="old">旧约（自动跨章、跨卷）</option><option value="new">新约（自动跨章、跨卷）</option>
+      <option value="chapter">本章</option>
+<option value="book">本卷（自动跨章）</option>
+      <option value="old">旧约（自动跨章、跨卷）</option>
+<option value="new">新约（自动跨章、跨卷）</option>
       <option value="all">全本圣经（自动跨章、跨卷）</option>
     </select></label>
-    <label class="inline" for="bible-tts-loop"><input id="bible-tts-loop" type="checkbox"/>循环播放所选范围</label>
+    <label class="inline" for="bible-tts-loop"><input id="bible-tts-loop" type="checkbox">循环播放所选范围</label>
   </div>
   <p class="subtle">从当前章节开始，自动连接下一章；选旧约或新约而当前章节不属于该范围时，从该约第一章开始。勾选循环后，到范围末尾会从该范围开头重读。正文不含节号、章节标题与注释，标点仅用于安排自然停顿。</p>
   <p class="subtle" id="bible-tts-flow-status" role="status" aria-live="polite">请选择范围和声音后，点击“开始朗读”。</p>
-</div><p class="subtle">连贯朗读，不额外插入标点后的机械停顿；正文标点随整句送入语音引擎，保持自然语调。页面中的原文、标点和注释保持不变。</p><div class="voice-browser"><label>声音来源<select id="tts-provider"><option value="all">全部实际声音</option><option value="microsoft">微软 Microsoft</option><option value="google">谷歌 Google</option><option value="other">其他／系统声音</option></select></label><button class="secondary" id="tts-refresh" type="button">刷新真实声音</button><button class="secondary" id="tts-default" type="button">恢复默认：微软在线小雨</button><p class="subtle">默认发音人：<strong>HsiaoYu · zh-TW-HsiaoYuNeural · 微软 Edge 在线</strong>。若当前浏览器没有小雨，将明确显示选中的实际中文备选发音人；不冒称小雨。</p><p class="subtle" id="tts-voice-summary" role="status">正在检测浏览器实际提供的声音……</p></div><div class="filters"><label>朗读声音<select id="tts-voice"><option>正在读取设备声音……</option></select></label><label>语速 <output id="tts-rate-value">1.0</output><input id="tts-rate" max="2" min="0.5" step="0.1" type="range" value="1"/></label><label>音量<input id="tts-volume" max="1" min="0" step="0.1" type="range" value="1"/></label><label>定时停止<select id="tts-timer"><option value="0">不设置</option><option value="5">5 分钟</option><option value="15">15 分钟</option><option value="30">30 分钟</option></select></label></div><label class="inline"><input id="tts-remote" type="checkbox" checked/>已允许联网声音（点击播放后，待朗读经文可能由浏览器发送给语音服务商；可取消）</label><details class="voice-help"><summary>为什么没有谷歌／微软声音？</summary><p>本播放器列出当前浏览器实际提供的声音；不是任意远程云服务的万能发音人列表。谷歌／微软声音按名称归组；联网声音会显示在列表中，当前默认启用联网语音，可随时关闭；不能用隐藏按钮假装不可用的声音已接通。</p><p>Windows 可在 Chrome 中检查 Google 声音，在 Edge 中检查 Microsoft 声音；不同系统与版本不保证提供相同清单。切换声音来源后可按“刷新声音列表”。未提供时会明确显示 0 个；如其他厂商有可用中文声音，系统会显示真实名称并作为备选，亦可手动改选。</p><p>Edge 自带的“朗读此页”还有独立的声音选择，可从浏览器菜单启用；本网页不能替你自动打开浏览器菜单。独立的 Google Cloud、Azure Speech 和 Edge 云端合成接口需要可验证的后端服务；本静态站没有服务器令牌，绝不盗用他人的接口或默默付费。</p><p><a href="https://www.microsoft.com/en-us/edge/features/read-aloud" rel="noopener noreferrer" target="_blank">Microsoft 官方朗读说明</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices" rel="noopener noreferrer" target="_blank">浏览器声音接口说明</a></p></details><div class="actions"><button id="tts-play">开始朗读</button><button class="secondary" id="tts-pause">暂停／继续</button><button class="secondary" id="tts-prev">上一段</button><button class="secondary" id="tts-next">下一段</button><button class="secondary" id="tts-stop">停止</button><button class="secondary" id="tts-restore">恢复本机听读位置</button></div><p aria-live="polite" id="tts-status" role="status">不自动播放。优先小雨；若未安装或未提供，则明确显示真实中文备选声音。</p><p class="subtle">暂停会优先使用语音引擎的原生暂停／继续，不再主动取消并重新朗读当前短段。手动切换章节会结束当前连续朗读；自动跨章和范围循环会保留播放计划。</p><p class="subtle">已按第181版全书31,089节正文核对242条词组读音规则。<a href="/data/bible/pronunciation-review.json">查看本版词组匹配审核表</a>。已整理多音字词组读音规则，浏览器原生语音不能保证逐字音素控制；真正硬性纠音须由支持音素标注的授权云端语音服务接收规则。当前为浏览器原生朗读适配器，并非大程序 TTS 引擎移植；可用声音因设备而异。浏览器后台休眠、锁屏和系统省电设置可能中断连续播放；不承诺任何设备都能后台不断播或导出 MP3；希伯来语、希腊语需对应的实际声音。</p></section><p class="subtle">原注仍可阅读，但不会发送给圣经正文朗读器；朗读位置只对应当前版本的真实正文。</p><p aria-atomic="true" aria-live="polite" id="reader-status" role="status"></p><button class="secondary" id="retry-reader" type="button">重新加载当前章节</button><article aria-label="圣经正文" class="reading" id="bible-content"></article><section aria-label="本章原注" class="panel note-section" id="bible-notes"></section><section class="notice"><h2>阅读标记</h2><p><span class="u-single">单实线</span>为母稿补足标记；<span class="u-double">双下划线</span>为母稿特定指称标记。标记不表示网页添加了译词。十五个传统节号在母稿原注中保留，不自动补造成正文。正文、原注均按实际源文件呈现，网页转换不是新的原文审校。</p></section><noscript><p>逐章数据库阅读与语音需要脚本；源文件说明在 <a href="/about/">版本页</a>。</p></noscript></main><footer class="shell"><p><strong>弥赛亚改革宗神学翻译网</strong> · 以圣经为准绳，注重原文、译文与出处。</p><p>本站原创译本与外部资源分开标示；收录不是对外站每项内容的认可。阅读进度与收藏仅保存在本机，可随时清除。</p><a href="/about/">版本、来源与使用说明</a> · <a href="mailto:gqdd056@gmail.com">勘误与联系</a><p class="subtle" data-build="20261125-r28-sevenfold-pastoral-depth">分类资源版：20261125-r28-sevenfold-pastoral-depth · <a href="/about/#release-check">核对网站版本</a></p></footer><script defer="" integrity="sha384-425oeYPJ27bh+LMmLxE7JtGp7zqxKvHT03MWq/HgtJHYoPccOqrEHS1eU1J6d0sX" src="/assets/runtime.js?v=20261125-r28-sevenfold-pastoral-depth"></script><script defer="" integrity="sha384-9TYreSdNqQOdhNaSGlaDleQ7wWC4wqMvOMi8NxCYRqpuEgJsuuhQWRnlm5J4dfcE" src="/assets/search-map.js?v=20261125-r28-sevenfold-pastoral-depth"></script><script defer="" integrity="sha384-qbqMk/PwnEu4rnm4FFle7tl+KP5w9UnoxKEDq6U9aCLRSmFuNTYA7qojSg0Uxvo8" src="/assets/search-engine.js?v=20261125-r28-sevenfold-pastoral-depth"></script><script defer src="/assets/voice-policy.js?v=20261125-r28-sevenfold-pastoral-depth" integrity="sha384-tnvPBwgPsfza7gJuoqCnL/9DqtC3U2ljNd4BIwP5czAebF/mRlhr5YcY+s7OtVv5"></script><script defer src="/assets/pronunciation-rules.js?v=20261125-r28-sevenfold-pastoral-depth" integrity="sha384-YW8ybXzuddQ6G9GbUggGmbfXdqLokrPUw0RUpDQ8f7hr4rm4YB4ZPwYtcpoXZkjh"></script><script defer="" integrity="sha384-5lzE/ui1msU0Z7Nlx1YitYb0B503/cFQymsb7nfaw1doQ7VQR1fWitARhbbikmVa" src="/assets/tts.js?v=20261125-r28-sevenfold-pastoral-depth"></script><script defer="" integrity="sha384-4BziTavc537zlwrF69r6HrOQDaD/nbomo3zB3OmcQiP9VqrLb/uA7VvcIv+DScGn" src="/assets/bible-references.js?v=20261125-r28-sevenfold-pastoral-depth"></script><script defer="" integrity="sha384-JY6d81MG+RdbnOLluLxFE60NSpVs20/OWbh5Y5g9+C+hLHcQjKUJpFkdS1ia+CvI" src="/assets/bible-app.js?v=20261125-r28-sevenfold-pastoral-depth"></script></body></html>
+</div>
+<div class="voice-browser">
+<label>声音来源<select id="tts-provider"><option value="all">全部实际声音</option>
+<option value="microsoft">微软 Microsoft</option>
+<option value="google">谷歌 Google</option>
+<option value="other">其他／系统声音</option></select></label><button class="secondary" id="tts-refresh" type="button">刷新真实声音</button><button class="secondary" id="tts-default" type="button">恢复默认：微软在线小雨</button><p class="subtle" id="tts-voice-summary" role="status">正在检测浏览器实际提供的声音……</p>
+</div>
+<div class="filters">
+<label>朗读声音<select id="tts-voice"><option>正在读取设备声音……</option></select></label><label>语速 <output id="tts-rate-value">1.0</output><input id="tts-rate" max="2" min="0.5" step="0.1" type="range" value="1"></label><label>音量<input id="tts-volume" max="1" min="0" step="0.1" type="range" value="1"></label><label>定时停止<select id="tts-timer"><option value="0">不设置</option>
+<option value="5">5 分钟</option>
+<option value="15">15 分钟</option>
+<option value="30">30 分钟</option></select></label>
+</div>
+<label class="inline"><input id="tts-remote" type="checkbox" checked>已允许联网声音（点击播放后，待朗读经文可能由浏览器发送给语音服务商；可取消）</label><details class="voice-help"><summary>为什么没有谷歌／微软声音？</summary><p>本播放器列出当前浏览器实际提供的声音；不是任意远程云服务的万能发音人列表。谷歌／微软声音按名称归组；联网声音会显示在列表中，当前默认启用联网语音，可随时关闭；不能用隐藏按钮假装不可用的声音已接通。</p>
+<p>Windows 可在 Chrome 中检查 Google 声音，在 Edge 中检查 Microsoft 声音；不同系统与版本不保证提供相同清单。切换声音来源后可按“刷新声音列表”。未提供时会明确显示 0 个；如其他厂商有可用中文声音，系统会显示真实名称并作为备选，亦可手动改选。</p>
+<p>Edge 自带的“朗读此页”还有独立的声音选择，可从浏览器菜单启用；本网页不能替你自动打开浏览器菜单。独立的 Google Cloud、Azure Speech 和 Edge 云端合成接口需要可验证的后端服务；本静态站没有服务器令牌，绝不盗用他人的接口或默默付费。</p>
+<p><a href="https://www.microsoft.com/en-us/edge/features/read-aloud" rel="noopener noreferrer" target="_blank">Microsoft 官方朗读说明</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices" rel="noopener noreferrer" target="_blank">浏览器声音接口说明</a></p></details><div class="actions">
+<button id="tts-play">开始朗读</button><button class="secondary" id="tts-pause">暂停／继续</button><button class="secondary" id="tts-prev">上一段</button><button class="secondary" id="tts-next">下一段</button><button class="secondary" id="tts-stop">停止</button><button class="secondary" id="tts-restore">恢复本机听读位置</button>
+</div>
+<p aria-live="polite" id="tts-status" role="status">不自动播放。优先小雨；若未安装或未提供，则明确显示真实中文备选声音。</p>
+<details class="reader-help"><summary>声音、连续播放与版本说明</summary><p class="subtle">连贯朗读，不额外插入标点后的机械停顿；正文标点随整句送入语音引擎，保持自然语调。页面中的原文、标点和注释保持不变。</p>
+<p class="subtle">暂停会优先使用语音引擎的原生暂停／继续，不再主动取消并重新朗读当前短段。手动切换章节会结束当前连续朗读；自动跨章和范围循环会保留播放计划。</p>
+<p class="subtle">已按第181版全书31,089节正文核对242条词组读音规则。<a href="/data/bible/pronunciation-review.json">查看本版词组匹配审核表</a>。已整理多音字词组读音规则，浏览器原生语音不能保证逐字音素控制；真正硬性纠音须由支持音素标注的授权云端语音服务接收规则。当前为浏览器原生朗读适配器，并非大程序 TTS 引擎移植；可用声音因设备而异。浏览器后台休眠、锁屏和系统省电设置可能中断连续播放；不承诺任何设备都能后台不断播或导出 MP3；希伯来语、希腊语需对应的实际声音。</p>
+<p class="subtle">默认发音人：<strong>HsiaoYu · zh-TW-HsiaoYuNeural · 微软 Edge 在线</strong>。若当前浏览器没有小雨，将明确显示选中的实际中文备选发音人；不冒称小雨。</p></details></section></section>
+      <section id="reader-panel-settings" role="tabpanel" aria-labelledby="reader-tab-settings" hidden>
+        <h2>阅读设置</h2>
+<label for="reading-size">正文字号<select id="reading-size"><option value="20">标准字号</option>
+<option value="24">大字号</option>
+<option value="28">更大字号</option></select></label>
+        <label for="reading-spacing">正文行距<select id="reading-spacing"><option value="1.8">紧凑</option>
+<option value="2">舒适</option>
+<option value="2.3">宽松</option></select></label>
+        <label class="inline"><input id="show-notes" type="checkbox" checked>显示本章原注</label>
+        <label class="inline"><input id="follow-audio" type="checkbox">跟随朗读滚动正文</label>
+        <div class="actions">
+<button type="button" class="secondary" id="reset-reading-settings">恢复阅读默认设置</button><button type="button" class="secondary" id="copy-location">复制本章链接</button>
+</div>
+        <details class="reader-help"><summary>翻章、翻屏与键盘操作</summary><p>上一章、下一章按圣经次序跨卷。向上翻屏、向下翻屏只移动当前阅读窗口，到边界时不会自动换章。</p>
+<p>先点正文或用制表键进入阅读窗口：左右方向键翻章；上下方向键逐行滚动；翻页键翻一屏；起始键和结束键到章首、章末。输入框与选择框保留原有键盘操作。</p>
+<p>在目录与设置中按退出键可返回正文。阅读设置只保存在当前浏览器；恢复默认不会清除阅读记录。</p></details>
+        <details class="reader-help" id="bible-version"><summary>版本、下载与阅读标记</summary><p class="subtle" id="bible-meta">正在加载当前快照说明……</p>
+<div class="actions">
+<a class="button" href="http://103.143.81.181/#drive?path=%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F2026%2F2026%E5%B9%B410%E6%9C%88%2F%E7%AC%AC%E4%BA%8C%E7%89%88" target="_blank" rel="noopener noreferrer">原文审校直译本第二版：资料库直接下载（无需微软账号）</a><a class="button secondary" href="https://shtvu-my.sharepoint.com/:f:/r/personal/today_onedrivechina_cn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Ftoday%5Fonedrivechina%5Fcn%2FDocuments%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F2026%2F2026%E5%B9%B410%E6%9C%88%2F%E7%AC%AC%E4%BA%8C%E7%89%88&amp;share=cgqMIMN1HOf2TbhWaRPDG9HwEgUBf6%2DUmxjV7Ma8DqmzOm%2DfJQ" target="_blank" rel="noopener noreferrer">第二版：微软网盘备用（可能要求登录）</a>
+</div>
+<p class="subtle">首选资料库链接无需微软账户，但仍以实际外部服务器开放情况为准；微软备份链接是否要求登录由分享者权限决定。本站在线阅读仍为已注明版本的只读快照；两者不保证即时同步，下载前请核对文件版本。</p>
+<section class="notice"><h2>阅读标记</h2>
+<p><span class="u-single">单实线</span>为母稿补足标记；<span class="u-double">双下划线</span>为母稿特定指称标记。标记不表示网页添加了译词。十五个传统节号在母稿原注中保留，不自动补造成正文。正文、原注均按实际源文件呈现，网页转换不是新的原文审校。</p></section></details>
+      </section>
+    </div>
+  </aside>
+  <section class="bible-reader" id="reader-panel" aria-label="经文与原注">
+    <div class="reader-toolbar">
+<div class="reader-location-row">
+<h2 id="reader-location">正在载入经文</h2>
+<button type="button" id="reader-controls-toggle" class="secondary" aria-controls="bible-controls" aria-expanded="true">收起面板</button><button type="button" id="reader-focus" class="secondary" aria-pressed="false">专注阅读</button>
+</div>
+<div class="reader-command-row">
+<div class="chapter-buttons" role="group" aria-label="按章节翻读">
+<button type="button" class="secondary" id="prev-chapter">上一章</button><button type="button" class="secondary" id="next-chapter">下一章</button>
+</div>
+<div class="reader-audio-shortcuts">
+<button type="button" id="reader-audio-toggle">开始朗读</button><button type="button" class="secondary" id="reader-audio-stop" disabled>停止朗读</button><button type="button" class="reader-text-button" id="reader-audio-settings">声音设置</button>
+</div>
+</div>
+<p id="reader-audio-state" class="subtle"></p>
+</div>
+    <div class="reader-feedback">
+<p id="reader-status" role="status" aria-live="polite" aria-atomic="true">正在加载经文……</p>
+<button type="button" class="secondary" id="retry-reader" hidden>重试加载</button>
+</div>
+    <div class="reader-scroll" id="reader-scroll" role="region" tabindex="0" aria-label="经文阅读窗口" aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown Home End">
+      <article class="reading" id="bible-content" aria-label="圣经正文"></article><section class="panel note-section" id="bible-notes" aria-label="本章原注"></section>
+    </div>
+    <nav class="reader-pagebar" aria-label="当前章节翻屏"><button type="button" id="reader-page-up" class="secondary" aria-label="向上翻一屏">向上翻屏</button><button type="button" id="reader-page-down" class="secondary" aria-label="向下翻一屏">向下翻屏</button><button type="button" id="reader-top" class="reader-text-button">回到章首</button><output id="reader-progress" aria-label="当前章节阅读进度">0%</output></nav>
+  </section>
+</section>
+</main><script defer integrity="sha384-uT6FYG+9O58ykFhJ5X2ArVi3z8vWlBJD9lXMSig9ZLBLpwpiCocIuWN0H62YrTrJ" src="/assets/runtime.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-9TYreSdNqQOdhNaSGlaDleQ7wWC4wqMvOMi8NxCYRqpuEgJsuuhQWRnlm5J4dfcE" src="/assets/search-map.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-nLkVlHwkkbsfpdTX6S6EH8cP7GL6wp4NDE7i8mINLi42SIxlFsbO/W/Ht8bN/4Pa" src="/assets/search-engine.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer src="/assets/voice-policy.js?v=20261128-r30-reader-workspace" integrity="sha384-tnvPBwgPsfza7gJuoqCnL/9DqtC3U2ljNd4BIwP5czAebF/mRlhr5YcY+s7OtVv5" crossorigin="anonymous"></script><script defer src="/assets/pronunciation-rules.js?v=20261128-r30-reader-workspace" integrity="sha384-YW8ybXzuddQ6G9GbUggGmbfXdqLokrPUw0RUpDQ8f7hr4rm4YB4ZPwYtcpoXZkjh" crossorigin="anonymous"></script><script defer integrity="sha384-BMQX3ZUw1ZA9lqC8boUYPFeLwEgAT2NTw1JpUqkpTf3kECrdOi3mUc13HaTaNtcE" src="/assets/tts.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-4BziTavc537zlwrF69r6HrOQDaD/nbomo3zB3OmcQiP9VqrLb/uA7VvcIv+DScGn" src="/assets/bible-references.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-DoPArutUrmWBLbMQKvgHpJFLRSDQyXwT0Hqhp2KR9YvFJo84446lqtPrPUEG1vI3" src="/assets/bible-app.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><footer class="site-footer"><div>
+<p><strong>弥赛亚改革宗神学翻译网</strong> · 以圣经为准绳，注重原文、译文与出处。</p>
+<nav aria-label="页脚导航"><a href="/site-map/">全站导航</a><a href="/about/">来源、隐私与使用说明</a><a href="/counseling/research/">原著与研究</a><a href="/#software-downloads">软件下载</a><a href="mailto:gqdd056@gmail.com">联系与勘误</a></nav><p class="subtle" data-build="20261128-r30-reader-workspace">网站版本：20261128-r30-reader-workspace</p>
+</div></footer>
+<script defer src="/assets/bible-workspace.js?v=20261128-r30-reader-workspace" integrity="sha384-jzxE7d2Xo8u8pFVg0ZG6b6Lm8j3PD4nu25eZYcHTsdHR0ESkfSGOxXKcAebdbCBQ" crossorigin="anonymous"></script><script defer src="/assets/site-ui.js?v=20261128-r30-reader-workspace" integrity="sha384-a4mcIREQ9oCXE6879WoLmDdCD5JvCC2NjBo7mx8sfAi+XKK/xR2+iturBVRoVDiJ" crossorigin="anonymous"></script></body>
+</html>
