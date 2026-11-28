@@ -364,11 +364,23 @@
     }).join('');
     $('calendar-holiday-count').textContent=`${events.length}项 · ${state.region==='israel'?'以色列惯例':'境外惯例'}`;
   }
+  let reversePickerYear=null;
   function renderReverseMonthPicker(){
     const y=Number($('hebrew-year').value),safe=(Number.isInteger(y)&&y>=5000&&y<=6300)?y:state.year;
     const entries=state.order==='religious'?religiousMonths(safe):civilMonths(safe);
-    const current=$('hebrew-month').value;
+    let current=$('hebrew-month').value;
+    if(!entries.some(([m])=>m===current)){
+      if(current==='Adar')current='Adar II';
+      else if(current==='Adar I'||current==='Adar II')current='Adar';
+    }
     $('hebrew-month').innerHTML=entries.map(([m,len])=>`<option value="${esc(m)}" ${m===current?'selected':''}>${esc(DATA[m].cn)} · ${len}日</option>`).join('');
+    reversePickerYear=safe;
+  }
+  function syncReverseYear(){
+    const y=Number($('hebrew-year').value);
+    if(!Number.isInteger(y)||y<5360||y>6161)return false;
+    if(y!==reversePickerYear){renderReverseMonthPicker();$('reverse-result').textContent='';}
+    return true;
   }
   function refreshAll(push=true){
     renderResult();renderMonthPicker();renderGrid();renderMonthCards();renderHolidayList();
@@ -395,8 +407,8 @@
     const target=monthTarget(step);if(!target)return;Object.assign(state,target);refreshAll();
   }
   function renderByDate(push=true){
-    try{const g=$('gregorian-date').value;parseDate(g);state.afterSunset=$('after-sunset').checked;syncSelected(g);refreshAll(push);return true;
-    }catch(e){$('calendar-result').textContent='未换算：'+e.message;$('calendar-week').replaceChildren();return false;}
+    try{const g=$('gregorian-date').value;parseDate(g);$('gregorian-date').removeAttribute('aria-invalid');state.afterSunset=$('after-sunset').checked;syncSelected(g);refreshAll(push);return true;
+    }catch(e){$('gregorian-date').setAttribute('aria-invalid','true');$('after-sunset').checked=state.afterSunset;$('calendar-result').textContent='未换算：'+e.message+'。下方月历与所选日期仍保留上次已确认的 '+state.selectedISO+'，尚未采用本次输入。';$('calendar-week').replaceChildren();return false;}
   }
   $('calendar-form').addEventListener('submit',e=>{e.preventDefault();renderByDate();});
   $('calendar-today').addEventListener('click',()=>{updateZone();try{$('gregorian-date').value=getTodayISO();updateSunsetContext(true);renderByDate();updateSunsetPreview();}catch(e){$('calendar-result').textContent=e.message;}});
@@ -433,9 +445,9 @@
     if(button.dataset.hcJump){$('gregorian-date').value=button.dataset.hcJump;$('after-sunset').checked=false;state.view='hebrew';updateSunsetContext(true);renderByDate();updateSunsetPreview();$('calendar-result').focus({preventScroll:true});$('calendar-result').scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
     if(button.dataset.hcDetails!==undefined){$('calendar-result').focus({preventScroll:true});$('calendar-result').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
   });
-  $('hebrew-year').addEventListener('change',renderReverseMonthPicker);
+  for(const event of ['input','change','blur'])$('hebrew-year').addEventListener(event,syncReverseYear);
   $('reverse-calendar').addEventListener('submit',e=>{
-    e.preventDefault();const result=$('reverse-result');try{
+    e.preventDefault();syncReverseYear();const result=$('reverse-result');try{
       const y=Number($('hebrew-year').value),m=$('hebrew-month').value,d=Number($('hebrew-day').value),g=reverse(y,m,d);
       if(!g)throw Error('此日期在公历1600—2400年的可计算范围之外');
       const start=rdISO(hToRD(y,m,d)-1);
@@ -453,7 +465,7 @@
     state.afterSunset=q.get('evening')==='1';$('after-sunset').checked=state.afterSunset;
     let date=q.get('date')||getTodayISO();
     try{parseDate(date);$('calendar-navigation-status').textContent='';}catch{date=getTodayISO();$('calendar-navigation-status').textContent='链接中的日期无效，已显示今天；请重新选择日期。';}
-    $('gregorian-date').value=date;syncSelected(date);
+    $('gregorian-date').value=date;$('gregorian-date').removeAttribute('aria-invalid');syncSelected(date);
     const hy=Number(q.get('hy')),hm=q.get('hm');
     if(Number.isInteger(hy)&&hy>=5360&&hy<=6161&&civilMonths(hy).some(([m])=>m===hm)&&monthAllowed(hy,hm)){state.year=hy;state.month=hm;}
     const gy=Number(q.get('gy')),gm=Number(q.get('gm'));

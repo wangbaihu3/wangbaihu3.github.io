@@ -135,8 +135,8 @@
     a.id = 'note-ref-' + id + (count === 1 ? '' : '-' + count);
     a.setAttribute('aria-label','查看母稿原注标识 ' + id);
     a.addEventListener('click', event => {
-      event.preventDefault(); $('show-notes').checked = true; $('bible-notes').hidden = false;
-      const url=new URL(location.href);url.hash='note-'+id;history.pushState(history.state,'',url);
+      event.preventDefault(); announce('leaving',{}); $('show-notes').checked = true; $('bible-notes').hidden = false;
+      const url=new URL(location.href);url.hash='note-'+id;history.pushState(null,'',url);
       focusAnchor('note-'+id);
     }); return a;
   }
@@ -176,9 +176,9 @@
     const ids=Object.keys(chapter.notes);$('bible-notes').append(el('h2','本章原注（'+ids.length+'）'));
     for(const id of ids) {
       const section=el('article',undefined,'note');section.id='note-'+id;section.append(el('strong','母稿原注标识 '+id));
-      chapter.notes[id].forEach((block,i)=>{const p=el('p');renderRuns(p,block);section.append(p);noteSpoken.push({text:block.text,element:p,id:'note-'+id+'-paragraph-'+i});});
+      chapter.notes[id].forEach((block,i)=>{const p=el('p');p.dataset.noteId=id;p.dataset.noteParagraph=String(i);renderRuns(p,block);section.append(p);noteSpoken.push({text:block.text,element:p,id:'note-'+id+'-paragraph-'+i});});
       const back=el('a','返回正文','note-back');back.href='#note-ref-'+id;
-      back.addEventListener('click',event=>{event.preventDefault();const url=new URL(location.href);url.hash='note-ref-'+id;history.pushState(history.state,'',url);focusAnchor('note-ref-'+id);});
+      back.addEventListener('click',event=>{event.preventDefault();announce('leaving',{});const url=new URL(location.href);url.hash='note-ref-'+id;history.pushState(null,'',url);focusAnchor('note-ref-'+id);});
       section.append(back);$('bible-notes').append(section);
     }
     $('bible-notes').hidden=!$('show-notes').checked;
@@ -215,11 +215,16 @@
     if(target.closest('#bible-notes')){$('show-notes').checked=true;$('bible-notes').hidden=false;}
     (target.closest('p,article')||target).classList.add('selected');
     const focusTarget=target.textContent.trim()?target:(target.closest('p,article')||target);
-    focusTarget.setAttribute('tabindex','-1');focusTarget.focus({preventScroll:true});
+    if(!['A','BUTTON','INPUT','SELECT','TEXTAREA','SUMMARY'].includes(focusTarget.tagName)&&focusTarget.getAttribute('tabindex')===null)focusTarget.setAttribute('tabindex','-1');
+    focusTarget.focus({preventScroll:true});
     const scroller=$('reader-scroll');
     if(scroller){const marker=target.closest('p,article')||target;scroller.scrollTop+=marker.getBoundingClientRect().top-scroller.getBoundingClientRect().top-20;}
     else target.scrollIntoView({block:'center'});
     announce('anchor',{name});return true;
+  }
+  function revealNoteTarget(fragment,position=null){
+    const target=document.getElementById(position?.note?'note-'+position.note:fragment||'');
+    if(target&&$('bible-notes').contains(target)){$('show-notes').checked=true;$('bible-notes').hidden=false;}
   }
   async function load(bookID,chapter=1,anchor=null,mode='push',ticket,restore=null,fragment='') {
     pendingTarget={book:bookID,chapter,anchor,mode,restore,fragment};
@@ -240,16 +245,20 @@
       active=data;chapterNo=chapter;$('bible-book').value=String(bookID);$('bible-chapter').replaceChildren();
       for(let i=1;i<=book.chapters;i++){const o=el('option','第 '+i+' 章');o.value=i;$('bible-chapter').append(o);}
       $('bible-chapter').value=chapter;display(targetChapter);
-      if(mode){const url='/bible/?book='+bookID+'&chapter='+chapter+(anchor?'&anchor='+encodeURIComponent(anchor):'')+(!anchor?fragment:'');history[mode==='replace'?'replaceState':'pushState'](restore?{biblePosition:restore}:null,'',url);}
+      if(mode){const url='/bible/?book='+bookID+'&chapter='+chapter+(anchor?'&anchor='+encodeURIComponent(anchor):'')+fragment;history[mode==='replace'?'replaceState':'pushState'](restore?{biblePosition:restore}:null,'',url);}
       lastRoute=location.search;
       $('reader-scroll').scrollTop=0;
       $('reader-location').textContent=active.name+' · 第 '+chapter+' 章';
       document.title=active.name+'第'+chapter+'章｜圣经阅读｜弥赛亚';
-      announce('loaded',{book:bookID,chapter,name:active.name,count:active.chapters.length,source:meta.version.source_sha256,restore,anchor,focus});
       const hash=SiteRuntime.decodeFragment(location.hash);
-      if(anchor)focusAnchor(anchor);
-      else if(hash===null)$('reader-status').textContent+=' 网址片段编码无效，已忽略片段；正文没有改变。';
-      else if(hash&&!focusAnchor(hash))$('reader-status').textContent+=' 本章没有此片段书签，未自动改读其他经文。';
+      const canRestore=restore&&restore.source===meta.version.source_sha256&&restore.book===bookID&&restore.chapter===chapter;
+      revealNoteTarget(hash,canRestore?restore:null);
+      announce('loaded',{book:bookID,chapter,name:active.name,count:active.chapters.length,source:meta.version.source_sha256,restore,anchor,focus});
+      if(!canRestore){
+        if(hash===null)$('reader-status').textContent+=' 网址片段编码无效，已忽略片段；正文没有改变。';
+        else if(hash){if(!focusAnchor(hash))$('reader-status').textContent+=' 本章没有此片段书签，未自动改读其他经文。';}
+        else if(anchor)focusAnchor(anchor);
+      }
       return true;
     }catch(error){if(seq!==intent)return false;invalidate();$('reader-location').textContent='经文未载入';$('reader-status').textContent='经文未载入：'+error.message+'。';$('retry-reader').hidden=false;announce('error',{message:error.message});return false;}
     finally{if(seq===intent)setBusy(false);}
@@ -299,29 +308,43 @@
   $('bible-query').addEventListener('input',()=>{++searchID;$('bible-search-results').replaceChildren();});
   $('bible-search-form').addEventListener('submit',async event=>{
     event.preventDefault();const seq=++searchID,q=$('bible-query').value.trim().slice(0,240),box=$('bible-search-results');
-    if(!meta){box.textContent='版本目录尚未载入，请重试加载。';return;}
+    function message(text){const status=el('p',text);status.setAttribute('role','status');box.replaceChildren(status);}
+    if(!meta){message('版本目录尚未载入，请重试加载。');return;}
     if(!SiteSearch.normalize(q)){box.replaceChildren();return;}
     const ref=BibleReferences.parse(q,meta.books);
-    if(ref?.error){box.textContent=ref.error;return;}
+    if(ref?.error){message(ref.error);return;}
     if(ref){
       const anchor=ref.verse===null?null:`verse_${ref.book}_${ref.chapter}_${ref.verse}`;
-      try{if(anchor){const all=await anchorList();if(seq!==searchID)return;if(!Object.hasOwn(all,anchor)){box.textContent='本版没有该节号书签；未跳转、未补造经文。';return;}}
+      try{if(anchor){const all=await anchorList();if(seq!==searchID)return;if(!Object.hasOwn(all,anchor)){message('本版没有该节号书签；未跳转、未补造经文。');return;}}
         if(seq!==searchID)return;const task=navigate(()=>load(ref.book,ref.chapter,anchor),{clearSearch:false}),ticket=intent,ok=await task;
-        if(seq===searchID&&ticket===intent)box.textContent=ok?'已定位到对应正文或原注宿主。':'定位未完成，请查看加载提示。';
-      }catch(e){if(seq===searchID)box.textContent='节号索引未载入：'+e.message;}return;
+        if(seq===searchID&&ticket===intent)message(ok?'已定位到对应正文或原注宿主。':'定位未完成，请查看加载提示。');
+      }catch(e){if(seq===searchID)message('节号索引未载入：'+e.message);}return;
     }
-    box.textContent='正在加载、校验并检索本版正文索引……';
+    message('正在加载、校验并检索本版正文索引……');
     try {
       const rows=await fullIndex();if(seq!==searchID)return;const terms=SiteSearch.normalize(q).split(/\s+/).filter(Boolean),matches=[];
       for(let i=0;i<rows.length;i++){if(terms.every(t=>rows[i].normalized.includes(t)))matches.push(rows[i]);if(i%500===0){await yieldUI();if(seq!==searchID)return;}}
-      if(seq!==searchID)return;box.replaceChildren(el('p','找到 '+matches.length+' 个经文段落；显示前 80 项。仅检索正文，不自动改写或解释经文。'));
-      for(const x of matches.slice(0,80)){const row=el('div',undefined,'search-result'),a=el('a',meta.books[x.book-1].name+' '+x.chapter+':'+x.verse);a.href='/bible/?book='+x.book+'&chapter='+x.chapter+'&anchor='+encodeURIComponent(x.anchor);
-        a.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button!==0)return;event.preventDefault();navigate(()=>load(x.book,x.chapter,x.anchor),{clearSearch:false});});
-        row.append(a,el('p',x.text));box.append(row);}
-    }catch(e){if(seq===searchID)box.textContent='全文索引未加载：'+e.message+'。可重新提交查询。';}
+      if(seq!==searchID)return;
+      const summary=el('p'),results=el('div'),more=el('button','显示更多经文','secondary');
+      summary.setAttribute('role','status');more.type='button';let shown=0;box.replaceChildren(summary,results,more);
+      function showMore(focus=false){
+        if(seq!==searchID)return;
+        const end=Math.min(shown+80,matches.length);let first=null;
+        for(const x of matches.slice(shown,end)){
+          const row=el('div',undefined,'search-result'),a=el('a',meta.books[x.book-1].name+' '+x.chapter+':'+x.verse);
+          a.href='/bible/?book='+x.book+'&chapter='+x.chapter+'&anchor='+encodeURIComponent(x.anchor);
+          a.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button!==0)return;event.preventDefault();navigate(()=>load(x.book,x.chapter,x.anchor),{clearSearch:false});});
+          row.append(a,el('p',x.text));results.append(row);first ||= a;
+        }
+        shown=end;summary.textContent='找到 '+matches.length+' 个经文段落，已显示 '+shown+' 项。仅检索正文，不自动改写或解释经文。';
+        more.hidden=shown>=matches.length;more.textContent='再显示 '+Math.min(80,matches.length-shown)+' 项经文';
+        if(focus&&first)first.focus({preventScroll:true});
+      }
+      more.addEventListener('click',()=>showMore(true));showMore();
+    }catch(e){if(seq===searchID)message('全文索引未加载：'+e.message+'。可重新提交查询。');}
   });
-  window.addEventListener('popstate',()=>{if(!meta)return;tts?.stop();++searchID;if(lastRoute!==location.search)route();else{const h=SiteRuntime.decodeFragment(location.hash);if(h)focusAnchor(h);else if(history.state?.biblePosition)announce('restore',history.state.biblePosition);else $('reader-scroll').scrollTop=0;}});
-  window.addEventListener('hashchange',()=>{const h=SiteRuntime.decodeFragment(location.hash);if(h&&active)focusAnchor(h);});
+  window.addEventListener('popstate',()=>{if(!meta)return;tts?.stop();++searchID;if(lastRoute!==location.search||!active)route();else{const h=SiteRuntime.decodeFragment(location.hash),p=history.state?.biblePosition;if(p&&p.source===meta.version.source_sha256&&p.book===active.id&&p.chapter===chapterNo){revealNoteTarget(h,p);announce('restore',p);}else if(h)focusAnchor(h);else $('reader-scroll').scrollTop=0;}});
+  window.addEventListener('hashchange',()=>{const h=SiteRuntime.decodeFragment(location.hash),p=history.state?.biblePosition;if(p&&active&&p.source===meta.version.source_sha256&&p.book===active.id&&p.chapter===chapterNo){revealNoteTarget(h,p);announce('restore',p);}else if(h&&active)focusAnchor(h);});
   window.addEventListener('pagehide',()=>{++intent;++searchID;++initialization;initialized=false;controller?.abort();});
   window.addEventListener('pageshow',event=>{
     if(!event.persisted)return;

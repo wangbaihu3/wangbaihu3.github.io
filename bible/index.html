@@ -9,11 +9,11 @@
 <title>圣经阅读｜弥赛亚改革宗神学翻译网</title>
 <meta content="改革宗与福音派资源，原文审校直译本阅读，双历对照与文字朗读。" name="description">
 <link href="https://https.ng/bible/" rel="canonical">
-<link href="/assets/app.css?v=20261128-r30-reader-workspace" integrity="sha384-XSWEdFrNhY+dFgkxzFaEPu0HpGumUc2jCooQoK4NHnwwlL7FQ9jMoq7ipflt/gr0" rel="stylesheet" crossorigin="anonymous">
+<link href="/assets/app.css?v=20261128-r31-core-reading-auth" integrity="sha384-XSWEdFrNhY+dFgkxzFaEPu0HpGumUc2jCooQoK4NHnwwlL7FQ9jMoq7ipflt/gr0" rel="stylesheet" crossorigin="anonymous">
 <meta content="no-referrer" name="referrer">
-<meta content="20261128-r30-reader-workspace" name="site-build">
-<link rel="stylesheet" href="/assets/site-navigation.css?v=20261128-r30-reader-workspace" integrity="sha384-KM6BR2ve2voOpNIclbWyL3SlyDrQHNgXDGhHOhEV524mwBbwmXobuwxWLKmUK51R" crossorigin="anonymous">
-<link rel="stylesheet" href="/assets/bible-reader.css?v=20261128-r30-reader-workspace" integrity="sha384-u1WJF2dtceV3RHAn1VI3D69m2nYgzhKJ/5Bhc5BfuXsf/shTYC9qOhpkErKH7xvK" crossorigin="anonymous">
+<meta content="20261128-r31-core-reading-auth" name="site-build">
+<link rel="stylesheet" href="/assets/site-navigation.css?v=20261128-r31-core-reading-auth" integrity="sha384-KM6BR2ve2voOpNIclbWyL3SlyDrQHNgXDGhHOhEV524mwBbwmXobuwxWLKmUK51R" crossorigin="anonymous">
+<link rel="stylesheet" href="/assets/bible-reader.css?v=20261128-r31-core-reading-auth" integrity="sha384-Y+WBTBvM8SvlEGrmCB6QbhtC1NHCt9UvvB6AB+lWJR2GNwuytRdSKAAULjA08Jub" crossorigin="anonymous">
 </head>
 <body class="bible-page">
 <a class="skip" href="#main">跳至正文</a><header class="site-header" data-site-header="true"><div class="site-head-inner">
@@ -56,7 +56,7 @@
 </div>
 <p class="subtle">支持简繁文字。关键词检索首次使用时加载全文索引。</p>
 </form>
-        <div id="bible-search-results" role="status" aria-live="polite"></div>
+        <div id="bible-search-results" role="region" aria-label="经文搜索结果"></div>
       </section>
       <section id="reader-panel-audio" role="tabpanel" aria-labelledby="reader-tab-audio" hidden><section aria-label="朗读播放器" class="tts reader-voice" id="tts-panel"><h2>朗读设置</h2>
 <div class="bible-audio-plan" role="group" aria-label="连续朗读范围">
@@ -112,7 +112,7 @@
         <details class="reader-help"><summary>翻章、翻屏与键盘操作</summary><p>上一章、下一章按圣经次序跨卷。向上翻屏、向下翻屏只移动当前阅读窗口，到边界时不会自动换章。</p>
 <p>先点正文或用制表键进入阅读窗口：左右方向键翻章；上下方向键逐行滚动；翻页键翻一屏；起始键和结束键到章首、章末。输入框与选择框保留原有键盘操作。</p>
 <p>在目录与设置中按退出键可返回正文。阅读设置只保存在当前浏览器；恢复默认不会清除阅读记录。</p></details>
-        <details class="reader-help" id="bible-version"><summary>版本、下载与阅读标记</summary><p class="subtle" id="bible-meta">正在加载当前快照说明……</p>
+        <details class="reader-help" id="bible-version"><summary>版本、下载与阅读标记</summary><p><a href="/bible/about/">阅读凡例与附录</a></p><p class="subtle" id="bible-meta">正在加载当前快照说明……</p>
 <div class="actions">
 <a class="button" href="http://103.143.81.181/#drive?path=%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F2026%2F2026%E5%B9%B410%E6%9C%88%2F%E7%AC%AC%E4%BA%8C%E7%89%88" target="_blank" rel="noopener noreferrer">原文审校直译本第二版：资料库直接下载（无需微软账号）</a><a class="button secondary" href="https://shtvu-my.sharepoint.com/:f:/r/personal/today_onedrivechina_cn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Ftoday%5Fonedrivechina%5Fcn%2FDocuments%2F%E7%94%B5%E5%AD%90%E4%B9%A6%2F%E4%B8%AD%E6%96%87%2F%E7%8E%8B%E7%99%BE%E8%99%8E%2F2026%2F2026%E5%B9%B410%E6%9C%88%2F%E7%AC%AC%E4%BA%8C%E7%89%88&amp;share=cgqMIMN1HOf2TbhWaRPDG9HwEgUBf6%2DUmxjV7Ma8DqmzOm%2DfJQ" target="_blank" rel="noopener noreferrer">第二版：微软网盘备用（可能要求登录）</a>
 </div>
@@ -145,12 +145,12 @@
     <div class="reader-scroll" id="reader-scroll" role="region" tabindex="0" aria-label="经文阅读窗口" aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown Home End">
       <article class="reading" id="bible-content" aria-label="圣经正文"></article><section class="panel note-section" id="bible-notes" aria-label="本章原注"></section>
     </div>
-    <nav class="reader-pagebar" aria-label="当前章节翻屏"><button type="button" id="reader-page-up" class="secondary" aria-label="向上翻一屏">向上翻屏</button><button type="button" id="reader-page-down" class="secondary" aria-label="向下翻一屏">向下翻屏</button><button type="button" id="reader-top" class="reader-text-button">回到章首</button><output id="reader-progress" aria-label="当前章节阅读进度">0%</output></nav>
+    <nav class="reader-pagebar" aria-label="当前章节翻屏"><button type="button" id="reader-page-up" class="secondary" aria-label="向上翻一屏">向上翻屏</button><button type="button" id="reader-page-down" class="secondary" aria-label="向下翻一屏">向下翻屏</button><button type="button" id="reader-top" class="reader-text-button">回到章首</button><output id="reader-progress" aria-label="当前章节阅读进度" aria-live="off">0%</output></nav>
   </section>
 </section>
-</main><script defer integrity="sha384-uT6FYG+9O58ykFhJ5X2ArVi3z8vWlBJD9lXMSig9ZLBLpwpiCocIuWN0H62YrTrJ" src="/assets/runtime.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-9TYreSdNqQOdhNaSGlaDleQ7wWC4wqMvOMi8NxCYRqpuEgJsuuhQWRnlm5J4dfcE" src="/assets/search-map.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-nLkVlHwkkbsfpdTX6S6EH8cP7GL6wp4NDE7i8mINLi42SIxlFsbO/W/Ht8bN/4Pa" src="/assets/search-engine.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer src="/assets/voice-policy.js?v=20261128-r30-reader-workspace" integrity="sha384-tnvPBwgPsfza7gJuoqCnL/9DqtC3U2ljNd4BIwP5czAebF/mRlhr5YcY+s7OtVv5" crossorigin="anonymous"></script><script defer src="/assets/pronunciation-rules.js?v=20261128-r30-reader-workspace" integrity="sha384-YW8ybXzuddQ6G9GbUggGmbfXdqLokrPUw0RUpDQ8f7hr4rm4YB4ZPwYtcpoXZkjh" crossorigin="anonymous"></script><script defer integrity="sha384-BMQX3ZUw1ZA9lqC8boUYPFeLwEgAT2NTw1JpUqkpTf3kECrdOi3mUc13HaTaNtcE" src="/assets/tts.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-4BziTavc537zlwrF69r6HrOQDaD/nbomo3zB3OmcQiP9VqrLb/uA7VvcIv+DScGn" src="/assets/bible-references.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><script defer integrity="sha384-DoPArutUrmWBLbMQKvgHpJFLRSDQyXwT0Hqhp2KR9YvFJo84446lqtPrPUEG1vI3" src="/assets/bible-app.js?v=20261128-r30-reader-workspace" crossorigin="anonymous"></script><footer class="site-footer"><div>
+</main><script defer integrity="sha384-5V/+CsU2KNz90pS1our+5P8pTbV/Nh82hP1H9f4X1rWlCtgyxjGacvxnpxZkaqyJ" src="/assets/runtime.js?v=20261128-r31-core-reading-auth" crossorigin="anonymous"></script><script defer integrity="sha384-9TYreSdNqQOdhNaSGlaDleQ7wWC4wqMvOMi8NxCYRqpuEgJsuuhQWRnlm5J4dfcE" src="/assets/search-map.js?v=20261128-r31-core-reading-auth" crossorigin="anonymous"></script><script defer integrity="sha384-nLkVlHwkkbsfpdTX6S6EH8cP7GL6wp4NDE7i8mINLi42SIxlFsbO/W/Ht8bN/4Pa" src="/assets/search-engine.js?v=20261128-r31-core-reading-auth" crossorigin="anonymous"></script><script defer src="/assets/voice-policy.js?v=20261128-r31-core-reading-auth" integrity="sha384-tnvPBwgPsfza7gJuoqCnL/9DqtC3U2ljNd4BIwP5czAebF/mRlhr5YcY+s7OtVv5" crossorigin="anonymous"></script><script defer src="/assets/pronunciation-rules.js?v=20261128-r31-core-reading-auth" integrity="sha384-YW8ybXzuddQ6G9GbUggGmbfXdqLokrPUw0RUpDQ8f7hr4rm4YB4ZPwYtcpoXZkjh" crossorigin="anonymous"></script><script defer integrity="sha384-DafIL7jEq1JqHSTDC7aXOLnWjiTtJuBEoBusNqaZydoOTjyXzDyDr8W+2XdTEDXv" src="/assets/tts.js?v=20261128-r31-core-reading-auth" crossorigin="anonymous"></script><script defer integrity="sha384-4BziTavc537zlwrF69r6HrOQDaD/nbomo3zB3OmcQiP9VqrLb/uA7VvcIv+DScGn" src="/assets/bible-references.js?v=20261128-r31-core-reading-auth" crossorigin="anonymous"></script><script defer integrity="sha384-pPKsCh/M6yYhp1XHDfJdGSyQlUsVqai2GAiUyZQoouvZkUJq3Ha9b/BITlYVcrsC" src="/assets/bible-app.js?v=20261128-r31-core-reading-auth" crossorigin="anonymous"></script><footer class="site-footer"><div>
 <p><strong>弥赛亚改革宗神学翻译网</strong> · 以圣经为准绳，注重原文、译文与出处。</p>
-<nav aria-label="页脚导航"><a href="/site-map/">全站导航</a><a href="/about/">来源、隐私与使用说明</a><a href="/counseling/research/">原著与研究</a><a href="/#software-downloads">软件下载</a><a href="mailto:gqdd056@gmail.com">联系与勘误</a></nav><p class="subtle" data-build="20261128-r30-reader-workspace">网站版本：20261128-r30-reader-workspace</p>
+<nav aria-label="页脚导航"><a href="/site-map/">全站导航</a><a href="/about/">来源、隐私与使用说明</a><a href="/counseling/research/">原著与研究</a><a href="/#software-downloads">软件下载</a><a href="mailto:gqdd056@gmail.com">联系与勘误</a></nav><p class="subtle" data-build="20261128-r31-core-reading-auth">网站版本：20261128-r31-core-reading-auth</p>
 </div></footer>
-<script defer src="/assets/bible-workspace.js?v=20261128-r30-reader-workspace" integrity="sha384-jzxE7d2Xo8u8pFVg0ZG6b6Lm8j3PD4nu25eZYcHTsdHR0ESkfSGOxXKcAebdbCBQ" crossorigin="anonymous"></script><script defer src="/assets/site-ui.js?v=20261128-r30-reader-workspace" integrity="sha384-a4mcIREQ9oCXE6879WoLmDdCD5JvCC2NjBo7mx8sfAi+XKK/xR2+iturBVRoVDiJ" crossorigin="anonymous"></script></body>
+<script defer src="/assets/bible-workspace.js?v=20261128-r31-core-reading-auth" integrity="sha384-JZQUwqUAGnqIPe0TPUW0Hk7h8P+HSAQK6GjmlTy+W2CmEgljaCZhiMPb9BcRVQUT" crossorigin="anonymous"></script><script defer src="/assets/site-ui.js?v=20261128-r31-core-reading-auth" integrity="sha384-a4mcIREQ9oCXE6879WoLmDdCD5JvCC2NjBo7mx8sfAi+XKK/xR2+iturBVRoVDiJ" crossorigin="anonymous"></script></body>
 </html>

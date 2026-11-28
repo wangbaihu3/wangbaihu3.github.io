@@ -75,7 +75,7 @@
         if (this.state === 'paused') { this.deferredEnd = finish; return; }
         finish();
       };
-      utterance.onerror = event => { if (current()) this.fail(event.error || '未知错误'); };
+      utterance.onerror = event => { if (same() && ['playing','paused'].includes(this.state)) this.fail(event.error || '未知错误'); };
       watchdog(15000, '服务未开始响应，请选择另一可用声音');
       this.notify('等待语音服务开始');
       try { this.synth.speak(utterance); } catch (error) { this.fail(error.message || '语音调用异常'); }
@@ -83,7 +83,7 @@
     pauseResume() {
       if (this.state === 'playing') {
         // 原生 pause/resume 保留当前发音进度，不以 cancel() 打断后重读。
-        try { this.synth.pause(); this.state = 'paused'; clearTimeout(this.watchdog); this.watchdog = null; this.notify('已暂停'); }
+        try { this.state = 'paused'; clearTimeout(this.watchdog); this.watchdog = null; this.synth.pause(); if(this.state==='paused')this.notify('已暂停'); }
         catch (error) { this.fail(error.message || '暂停失败'); }
       } else if (this.state === 'paused') {
         try {
@@ -154,7 +154,7 @@
       $('tts-status').textContent = '当前浏览器没有朗读 API；阅读不受影响。';
       panel.querySelectorAll('button,select,input').forEach(e => { e.disabled = true; }); return null;
     }
-    let provider = () => [], context = () => location.pathname, highlight = null, preparation=0, flowHooks=null, sleepDeadline=null;
+    let provider = () => [], context = () => location.pathname, highlight = null, preparation=0, command=0, flowHooks=null, sleepDeadline=null;
     const clearHighlight = () => { highlight?.classList.remove('current-audio'); highlight = null; };
     const engine = new ReaderSpeech(root.speechSynthesis, root.SpeechSynthesisUtterance, {
       onState(state) {
@@ -222,7 +222,7 @@
       }
       const decision=policy ? policy.choose(list,$('tts-remote').checked) : {voice:null,reason:'未加载默认小雨声音选择规则'};
       voiceSelect.value=decision.voice?voiceKey(decision.voice):'';
-      if (previous && (!decision.voice || voiceKey(previous)!==voiceKey(decision.voice))) {++preparation;engine.stop();flowHooks?.onStop?.();}
+      if (previous && (!decision.voice || voiceKey(previous)!==voiceKey(decision.voice))) {++command;++preparation;engine.stop();flowHooks?.onStop?.();}
       selectActualVoice();
       if ($('tts-voice-summary')) {
         $('tts-voice-summary').textContent = '本浏览器返回 ' + actualVoices.length + ' 个声音：微软 ' + counts.microsoft + '、谷歌 ' + counts.google + '、其他 ' + counts.other + '。' +
@@ -234,11 +234,11 @@
     voices(); root.speechSynthesis.addEventListener?.('voiceschanged', voices);
     // 一些浏览器的声音目录会异步填充；两次有界复查避免初次列表为空。
     root.setTimeout?.(voices, 350); root.setTimeout?.(voices, 1400);
-    voiceSelect.addEventListener('change', () => { ++preparation; engine.stop(); flowHooks?.onStop?.(); const v=availableOptions.get(voiceSelect.value);if(v)policy?.save(v);selectActualVoice(); });
-    if (providerSelect) providerSelect.addEventListener('change', () => { ++preparation; engine.stop(); engine.setVoice(null); voiceSelect.value = ''; flowHooks?.onStop?.(); voices(); });
+    voiceSelect.addEventListener('change', () => { ++command;++preparation; engine.stop(); flowHooks?.onStop?.(); const v=availableOptions.get(voiceSelect.value);if(v)policy?.save(v);selectActualVoice(); });
+    if (providerSelect) providerSelect.addEventListener('change', () => { ++command;++preparation; engine.stop(); engine.setVoice(null); voiceSelect.value = ''; flowHooks?.onStop?.(); voices(); });
     $('tts-refresh')?.addEventListener('click', voices);
     $('tts-default')?.addEventListener('click', () => {policy?.reset();providerSelect.value='all';voices();$('tts-status').textContent='已恢复小雨优先策略；若当前没有小雨，将明确显示所使用的中文备选声音。';});
-    $('tts-remote').addEventListener('change', () => { ++preparation; engine.stop(); engine.allowRemote = $('tts-remote').checked; savePlaybackSettings();flowHooks?.onStop?.(); voices(); });
+    $('tts-remote').addEventListener('change', () => { ++command;++preparation; engine.stop(); engine.allowRemote = $('tts-remote').checked; savePlaybackSettings();flowHooks?.onStop?.(); voices(); });
     $('tts-rate').addEventListener('input', () => { engine.rate = Number($('tts-rate').value); $('tts-rate-value').textContent = engine.rate.toFixed(1);savePlaybackSettings(); });
     $('tts-volume').addEventListener('input', () => { engine.volume = Number($('tts-volume').value);savePlaybackSettings(); });
     $('tts-timer').addEventListener('change', () => { const m=Number($('tts-timer').value); sleepDeadline=m>0?Date.now()+m*60000:null; engine.setTimer(m); });
@@ -301,24 +301,28 @@
       }
     }
     $('tts-play').addEventListener('click', async () => {
+      const request=++command;
       try {
         if (flowHooks?.beforeStart && await flowHooks.beforeStart({resume:false}) === false) return;
+        if(request!==command)return;
         await playCurrent(false);
-      } catch(error) { engine.clear();$('tts-status').textContent='无法开始朗读：'+error.message;flowHooks?.onError?.(error.message); }
+      } catch(error) { if(request!==command)return;engine.clear();$('tts-status').textContent='无法开始朗读：'+error.message;flowHooks?.onError?.(error.message); }
     });
     $('tts-pause').addEventListener('click', () => engine.pauseResume());
-    $('tts-stop').addEventListener('click', () => {++preparation;sleepDeadline=null;engine.stop();flowHooks?.onStop?.();});
+    $('tts-stop').addEventListener('click', () => {++command;++preparation;sleepDeadline=null;engine.stop();flowHooks?.onStop?.();});
     function moveSpeech(delta){
-      ++preparation;
+      ++command;++preparation;
       if(sleepDeadline!==null&&Date.now()>=sleepDeadline){engine.stop();flowHooks?.onStop?.();$('tts-status').textContent='已到定时停止时间';return;}
       engine.move(delta);if(engine.state==='playing'&&sleepDeadline!==null)engine.setTimer((sleepDeadline-Date.now())/60000);
     }
     $('tts-prev').addEventListener('click',()=>moveSpeech(-1));
     $('tts-next').addEventListener('click',()=>moveSpeech(1));
     $('tts-restore').addEventListener('click', async () => {
+      const request=++command;
       let saved; try { saved = JSON.parse(localStorage.getItem('messiah-tts-position') || 'null'); } catch {}
       try { if (flowHooks?.beforeStart && await flowHooks.beforeStart({resume:true,saved}) === false) return; }
-      catch(e) { $('tts-status').textContent='恢复定位失败：'+e.message;flowHooks?.onStop?.();return; }
+      catch(e) { if(request!==command)return;$('tts-status').textContent='恢复定位失败：'+e.message;flowHooks?.onStop?.();return; }
+      if(request!==command)return;
       const token=++preparation;
       let rows;try{rows=await prepare(token);}catch(e){if(token!==preparation)return;$('tts-status').textContent='朗读准备失败：'+e.message;flowHooks?.onStop?.();return;}if(token!==preparation)return;if(!rows){flowHooks?.onStop?.();return;}
       if (!saved || ![4,5].includes(saved.schema) || saved.context !== context()) { $('tts-status').textContent = '没有与当前版本、章节和朗读模式一致的听读记录。';flowHooks?.onStop?.(); return; }
@@ -331,7 +335,7 @@
     });
     engine.rate=Number($('tts-rate').value)||1;engine.volume=Number($('tts-volume').value);
     window.addEventListener('storage',event=>{if(event.key===null||event.key==='messiah-tts-position'){$('tts-status').textContent='本机听读记录已在其他页面更新或清除。';}});
-    window.addEventListener('pagehide', () => {++preparation;engine.clear();flowHooks?.onStop?.();});
+    window.addEventListener('pagehide', () => {++command;++preparation;engine.clear();flowHooks?.onStop?.();});
     return {
       engine,
       setProvider(fn, ctx) { ++preparation; engine.clear(); provider = fn; if (ctx) context = ctx;
@@ -339,8 +343,8 @@
       },
       setFlowHooks(hooks) { flowHooks = hooks || null; },
       playCurrent: () => playCurrent(true),
-      stop:() => { ++preparation; sleepDeadline=null; engine.stop(); flowHooks?.onStop?.(); },
-      reset:() => { ++preparation; engine.clear(); flowHooks?.onStop?.(); }
+      stop:() => { ++command;++preparation; sleepDeadline=null; engine.stop(); flowHooks?.onStop?.(); },
+      reset:() => { ++command;++preparation;sleepDeadline=null;engine.clear(); flowHooks?.onStop?.(); }
     };
   }
   root.ReaderSpeech = ReaderSpeech; root.ReaderSpeechSplit = split; root.ReaderSpeechSegments = speechSegments; root.mountReaderSpeech = mount;

@@ -106,7 +106,7 @@ function writeResearchAddress(replace=true){if(state.restoringRoute||location.pr
  const u=new URL(location.href);u.hash=p.toString();if(u.href===location.href)return;try{history[replace?'replaceState':'pushState']({},'',u);}catch{}
 }
 function cancelReaderLoad(){state.readerLoad++;if(state.readerPending){state.readerPending=false;state.reader.failed=!!state.readerFile;state.reader.status='文件读取已取消，可重新读取。';}}
-function restoreResearchAddress(){const p=new URLSearchParams(location.hash.slice(1));if(!p.has('view')){if(!location.hash)navigate('home',{history:false});return;}
+function restoreResearchAddress(){if(state.route==='editor'&&$('editor-reason'))updateEditor();const p=new URLSearchParams(location.hash.slice(1));if(!p.has('view')){if(!location.hash)navigate('home',{history:false});return;}
  const route=p.get('view');if(!nav.some(x=>x[0]===route))return;state.restoringRoute=true;cancelReaderLoad();stopTTS();
  try{state.route=route;state.book=null;state.libQ=(p.get('q')||'').slice(0,120);state.libSit=['all','none',...sitById.keys()].includes(p.get('sit'))?p.get('sit'):'all';state.libTopic=['all',...topicById.keys()].includes(p.get('topic'))?p.get('topic'):'all';state.libReview=['重点安全审查','优先人工核类','常规语义审读'].includes(p.get('review'))?p.get('review'):'all';const page=Number(p.get('page'));state.libPage=Number.isInteger(page)&&page>=0?page:0;
   render();if(route==='library'&&p.has('book')){if(byId.has(p.get('book')))renderBookDetail(p.get('book'));else container('<section class="panel"><h1>未找到该书目</h1><p>链接中的书目编号不在当前目录。</p><button class="btn" data-route="library">返回书目检索</button></section>');}
@@ -122,7 +122,7 @@ function decodeText(bytes,enc){const b=new Uint8Array(bytes);if(enc==='auto'){
  else {try{return new TextDecoder('utf-8',{fatal:true}).decode(b).replace(/^\ufeff/,'')}catch{enc='gb18030'}}
  }
  return new TextDecoder(enc,{fatal:true}).decode(b).replace(/^\ufeff/,'');}
-function makeParas(t){const normalized=t.replace(/\r\n?/g,'\n').replace(/\u0000/g,'').trim();let blocks=normalized.split(/\n\s*\n/g).map(x=>x.trim()).filter(Boolean);if(blocks.length<4&&normalized.length>1000)blocks=normalized.split(/\n/g).map(x=>x.trim()).filter(Boolean);return blocks.flatMap(x=>x.length>8000?x.match(/[\s\S]{1,6000}/g)||[]:[x]);}
+function makeParas(t){const normalized=t.replace(/\r\n?/g,'\n').replace(/\u0000/g,'').trim();let blocks=normalized.split(/\n\s*\n/g).map(x=>x.trim()).filter(Boolean);if(blocks.length<4&&normalized.length>1000)blocks=normalized.split(/\n/g).map(x=>x.trim()).filter(Boolean);return blocks.flatMap(x=>{if(x.length<=8000)return[x];const parts=[];for(let start=0;start<x.length;){let end=Math.min(start+6000,x.length);if(end<x.length&&/[\uD800-\uDBFF]/.test(x[end-1])&&/[\uDC00-\uDFFF]/.test(x[end]))end--;parts.push(x.slice(start,end));start=end;}return parts;});}
 async function openReaderFile(file){if(!file)return;const token=++state.readerLoad;state.readerFile=file;state.readerPending=true;state.reader.failed=false;stopTTS();state.reader.title=file.name;state.reader.bytes=null;state.reader.paras=[];state.reader.current=0;state.reader.shown=120;setReaderStatus('正在读取本机文件……');if(state.route==='reader')renderReader();
  try{if(file.size>20_000_000)throw Error('单份文件超过20兆字节，请先分卷读取；没有截断原文。');const bytes=await file.arrayBuffer();if(token!==state.readerLoad||state.route!=='reader')return;if(bytes.byteLength>20_000_000)throw Error('文件超过20兆字节');state.reader.bytes=bytes;const text=decodeText(bytes,state.reader.encoding);if(!text.trim())throw Error('文本为空');
   state.reader.paras=makeParas(text);state.reader.shown=Math.min(120,state.reader.paras.length);state.reader.current=0;state.reader.status=`已读取 ${fmt(bytes.byteLength)} 字节、${fmt(state.reader.paras.length)} 段；未上传。`;state.reader.failed=false;state.readerPending=false;state.mobileControlsOpen=false;renderReader();
@@ -182,7 +182,7 @@ function jreport(){return {schema:'personal-spiritual-discernment-v5',status:'�
  document.addEventListener('input',e=>{if(e.target.hasAttribute('data-journey-note'))journey.notes[e.target.dataset.journeyNote]=e.target.value;});
 
 function initEvents(){document.addEventListener('click',e=>{const line=e.target.closest('[data-readline]');if(line&&window.getSelection()?.isCollapsed!==false){playTTS(Number(line.dataset.readline));return;}const el=e.target.closest('button');if(!el)return;
- if(el.id==='reader-retry'){openReaderFile(state.readerFile);return;}if(el.id==='editor-clear'){state.editorQ='';renderEditor();$('editor-q')?.focus();return;}
+ if(el.id==='reader-retry'){openReaderFile(state.readerFile);return;}if(el.id==='editor-clear'){if($('editor-reason'))updateEditor();state.editorQ='';renderEditor();$('editor-q')?.focus();return;}
  if(el.id==='mobile-controls-toggle'){toggleReaderDrawer(true);return;}
  if(el.id==='mobile-controls-close'){toggleReaderDrawer(false);return;}
  if(el.dataset.route){navigate(el.dataset.route);return;}
@@ -190,7 +190,7 @@ function initEvents(){document.addEventListener('click',e=>{const line=e.target.
  if(el.dataset.searchSit){state.libSit=el.dataset.searchSit;state.libPage=0;navigate('library');return;}
  if(el.dataset.book){renderBookDetail(el.dataset.book);$('view')?.focus({preventScroll:true});window.scrollTo({top:0,behavior:'auto'});return;}
  if(el.dataset.page){state.libPage=Math.max(0,state.libPage+(el.dataset.page==='next'?1:-1));writeResearchAddress(false);renderLibrary();$('view')?.focus({preventScroll:true});return;}
- if(el.dataset.editbook){state.editorId=el.dataset.editbook;renderEditor();return;}
+ if(el.dataset.editbook){if($('editor-reason'))updateEditor();state.editorId=el.dataset.editbook;renderEditor();$('editor-reason')?.focus({preventScroll:true});return;}
  if(el.dataset.readline!==undefined){playTTS(Number(el.dataset.readline));return;}
  if(el.id==='lib-clear'){state.libQ='';state.libSit='all';state.libTopic='all';state.libReview='all';state.libPage=0;renderLibrary();return;}
  if(el.id==='self-clear'){state.selfNotes={};renderSelf();return;}
@@ -222,7 +222,7 @@ function initEvents(){document.addEventListener('click',e=>{const line=e.target.
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.mobileControlsOpen){toggleReaderDrawer(false);return;}if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-readline]')){e.preventDefault();playTTS(Number(e.target.dataset.readline));}});
  document.addEventListener('click',e=>{if(e.target?.id==='reader-backdrop'&&state.mobileControlsOpen)toggleReaderDrawer(false);});
  if(window.speechSynthesis){window.speechSynthesis.addEventListener?.('voiceschanged',()=>{if(state.route==='reader'&&!state.playing){const cur=state.reader.voiceKey;if(cur&&!voiceList().some(v=>voiceKey(v)===cur)){state.reader.voiceKey='';state.reader.status='先前手选的声音已不可用，已恢复自动中文声音选择。'}renderReader();}})}
- window.addEventListener('pagehide',()=>{cancelReaderLoad();stopTTS();});window.addEventListener('popstate',restoreResearchAddress);window.addEventListener('hashchange',restoreResearchAddress);
+ let hiddenReaderWasPending=false;window.addEventListener('pagehide',()=>{hiddenReaderWasPending=state.readerPending;cancelReaderLoad();stopTTS();});window.addEventListener('pageshow',e=>{if(e.persisted&&hiddenReaderWasPending&&state.route==='reader'){hiddenReaderWasPending=false;renderReader();}});window.addEventListener('popstate',restoreResearchAddress);window.addEventListener('hashchange',restoreResearchAddress);
 }
 
 // 第五轮：原著依据与来源作者的推论分层，不将教材个案判为人的灵性诊断。

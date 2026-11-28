@@ -90,6 +90,8 @@ function buttons(compact=false){const rows=lessonResults(),at=rows.findIndex(x=>
 
 function audioControls(scope='course'){return `<details class="audio-tools"><summary>${scope==='case'?'案例朗读':'课程朗读'}与声音设置</summary><p class="mini">选择当前浏览器提供的真实声音。点击播放才开始朗读；联网声音可能把正文发送给语音服务商，也可只用本机声音。</p><div class="actions"><label><input type="checkbox" id="course-remote" ${allowRemote?'checked':''}>允许联网声音</label><label for="course-voice">声音 <select id="course-voice"><option value="">正在读取真实声音</option></select></label><button type="button" data-audio="refresh">刷新声音</button><button type="button" data-audio="play" ${reader?'':'disabled'}>${scope==='case'?'朗读本案例':all?'朗读本主题全部课程':'朗读本课'}</button><button type="button" data-audio="pause" ${reader?'':'disabled'}>暂停／继续</button><button type="button" data-audio="stop" ${reader?'':'disabled'}>停止</button><label for="course-rate">语速 <select id="course-rate">${[0.85,1,1.15,1.35].map(x=>`<option value="${x}" ${x===voiceRate?'selected':''}>${x===1?'正常':x+'倍'}</option>`).join('')}</select></label></div><p id="course-tts-status" class="mini" role="status" aria-live="polite">${reader?'尚未开始朗读。':'此浏览器没有提供朗读接口；文字阅读不受影响。'}</p></details>`;}
 function renderLessons(){
+ // 关键词检索只展示命中的单课；手改网址也不展开不匹配的整主题。
+ if(query)all=false;
  // 修复“查无结果仍显示上一次课程”及“筛选命中其它课、正文停留旧课”的误导。
  // 搜索时让正文与左栏结果同步，不清空查询文本，也不改变原始课程数据。
  if(query){
@@ -184,7 +186,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
   const nextIndex=b.dataset.lesson!==undefined?Number(b.dataset.lesson):Math.max(0,first);
   goto('book',b.dataset.book,nextIndex,Boolean(query));return;
 }
- if(b.dataset.lesson!==undefined){goto('lesson',Number(b.dataset.lesson),undefined,Boolean(query));return;}
+ if(b.dataset.lesson!==undefined){goto('lesson',Number(b.dataset.lesson));return;}
  if(b.dataset.case!==undefined){goto('case',Number(b.dataset.case),undefined,Boolean(query)&&mode==='cases');return;}
  if(b.dataset.step){const rows=lessonResults(),at=rows.findIndex(x=>x.book===selected&&x.index===index),next=rows[at+(b.dataset.step==='next'?1:-1)];if(next)goto('book',next.book,next.index,Boolean(query));return;}
  if(b.dataset.mode){goto('mode',b.dataset.mode);return;}

@@ -27,7 +27,8 @@
   function showControls(open,{focus=false}={}){
     controlsOpen=!!open;side.hidden=!controlsOpen;workspace.dataset.controlsHidden=String(!controlsOpen);
     $('reader-controls-toggle').setAttribute('aria-expanded',String(controlsOpen));
-    $('reader-controls-toggle').textContent=small.matches?'目录与设置':controlsOpen?'收起面板':'展开面板';
+    $('reader-controls-toggle').textContent=small.matches?'目录':controlsOpen?'收起面板':'展开面板';
+    $('reader-controls-toggle').setAttribute('aria-label',small.matches?'打开目录与设置':$('reader-controls-toggle').textContent);
     reader.inert=small.matches&&controlsOpen;
     if(small.matches&&controlsOpen){side.setAttribute('role','dialog');side.setAttribute('aria-modal','true');side.setAttribute('aria-labelledby','controls-heading');}
     else{side.removeAttribute('role');side.removeAttribute('aria-modal');side.removeAttribute('aria-labelledby');}
@@ -45,9 +46,14 @@
   $('close-reader-controls').addEventListener('click',()=>showControls(false,{focus:true}));
   $('reader-audio-settings').addEventListener('click',()=>{showControls(true);selectTab('audio',{focus:true});});
   function setFocusMode(on){
-    focusMode=on;document.body.classList.toggle('reader-focus-mode',on);$('reader-focus').setAttribute('aria-pressed',String(on));$('reader-focus').textContent=on?'退出专注':'专注阅读';
+    focusMode=on;document.body.classList.toggle('reader-focus-mode',on);syncFocusButton();
     if(on){wasOpen=controlsOpen;showControls(false);}else showControls(!small.matches&&wasOpen);
     sizeWorkspace();
+  }
+  function syncFocusButton(){
+    $('reader-focus').setAttribute('aria-pressed',String(focusMode));
+    $('reader-focus').textContent=focusMode?'退出专注':small.matches?'专注':'专注阅读';
+    $('reader-focus').setAttribute('aria-label',focusMode?'退出专注阅读':'进入专注阅读');
   }
   $('reader-focus').addEventListener('click',()=>setFocusMode(!focusMode));
   document.addEventListener('keydown',event=>{
@@ -62,7 +68,12 @@
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
   });
-  const onModeChange=()=>showControls(!small.matches&&!focusMode);
+  const onModeChange=()=>{
+    const focused=document.activeElement,wasInSide=side.contains(focused);
+    showControls(!small.matches&&!focusMode);syncFocusButton();syncAudio();
+    if(wasInSide&&!controlsOpen)$('reader-controls-toggle').focus({preventScroll:true});
+    else if(focused===$('close-reader-controls')&&!small.matches)(side.querySelector('[role=tab][aria-selected=true]')||$('reader-controls-toggle')).focus({preventScroll:true});
+  };
   small.addEventListener?.('change',onModeChange);
   function updateProgress(){
     const range=Math.max(0,scroll.scrollHeight-scroll.clientHeight),position=scroll.scrollTop;
@@ -89,7 +100,9 @@
     const top=scroll.getBoundingClientRect().top;
     const paragraphs=[...$('bible-content').querySelectorAll('p[data-source-p]')];
     const paragraph=paragraphs.find(p=>p.getBoundingClientRect().bottom>top+5);
-    return {book:current.book,chapter:current.chapter,source:current.source,paragraph:paragraph?.dataset.sourceP||null,offset:paragraph?paragraph.getBoundingClientRect().top-top:0,scrollTop:scroll.scrollTop,saved:Date.now()};
+    const note=!paragraph&&!$('bible-notes').hidden?[...$('bible-notes').querySelectorAll('p[data-note-id]')].find(p=>p.getBoundingClientRect().bottom>top+5):null;
+    const marker=paragraph||note;
+    return {book:current.book,chapter:current.chapter,source:current.source,paragraph:paragraph?.dataset.sourceP||null,note:note?.dataset.noteId||null,noteParagraph:note?.dataset.noteParagraph||null,offset:marker?marker.getBoundingClientRect().top-top:0,scrollTop:scroll.scrollTop,saved:Date.now()};
   }
   function savePosition(){
     clearTimeout(saving);const position=capturePosition();if(!position)return;
@@ -98,7 +111,7 @@
   }
   function restorePosition(position){
     if(!position||!current||position.source!==current.source||position.book!==current.book||position.chapter!==current.chapter)return;
-    const p=[...$('bible-content').querySelectorAll('p[data-source-p]')].find(x=>x.dataset.sourceP===String(position.paragraph));
+    const p=position.note&&!$('bible-notes').hidden?[...$('bible-notes').querySelectorAll('p[data-note-id]')].find(x=>x.dataset.noteId===String(position.note)&&x.dataset.noteParagraph===String(position.noteParagraph)):[...$('bible-content').querySelectorAll('p[data-source-p]')].find(x=>x.dataset.sourceP===String(position.paragraph));
     if(p&&Number.isFinite(position.offset))scroll.scrollTop+=p.getBoundingClientRect().top-scroll.getBoundingClientRect().top-position.offset;
     else if(Number.isFinite(position.scrollTop))scroll.scrollTop=Math.max(0,position.scrollTop);
     updateProgress();
@@ -111,7 +124,7 @@
     const saved=api.saved(),meta=api.meta();
     const book=meta?.books.find(b=>b.id===saved?.book);
     const valid=book&&saved.source===meta.version.source_sha256&&Number.isInteger(saved.chapter)&&saved.chapter>=1&&saved.chapter<=book.chapters;
-    $('saved-reading-label').textContent=valid?'上次：'+book.name+'第'+saved.chapter+'章'+(saved.paragraph?'，可恢复段落位置。':'。'):'尚无当前版本的本机阅读记录。';
+    $('saved-reading-label').textContent=valid?'上次：'+book.name+'第'+saved.chapter+'章'+(saved.note?'，可恢复原注位置。':saved.paragraph?'，可恢复段落位置。':'。'):'尚无当前版本的本机阅读记录。';
     $('resume-reading').disabled=!valid;
   }
   function chapterGrid(){
@@ -127,10 +140,13 @@
     const speech=api.speech(),engine=speech?.engine,state=engine?.state;
     const playing=state==='playing',paused=state==='paused';
     const plan=api.plan?.(),pending=!!plan?.pending||!!plan?.active&&!playing&&!paused,cancellable=playing||paused||pending;
-    $('reader-audio-toggle').textContent=playing?'暂停朗读':paused?'继续朗读':pending?'正在准备朗读':'开始朗读';
+    const unavailable=!engine?.voice;
+    $('reader-audio-toggle').textContent=playing?(small.matches?'暂停':'暂停朗读'):paused?(small.matches?'继续':'继续朗读'):pending?(small.matches?'准备中':'正在准备朗读'):unavailable?'暂无声音':small.matches?'朗读':'开始朗读';
+    $('reader-audio-toggle').setAttribute('aria-label',playing?'暂停朗读':paused?'继续朗读':pending?'正在准备朗读':unavailable?'当前没有可用的朗读声音':'开始朗读');
+    $('reader-audio-toggle').title=unavailable?'可在目录中的朗读设置查看设备提供的声音。':'';
     $('reader-audio-toggle').disabled=busy||!current||!engine?.voice||pending;
-    $('reader-audio-stop').disabled=!cancellable;$('reader-audio-stop').dataset.active=String(cancellable);
-    $('reader-audio-state').textContent=playing||paused?$('tts-status').textContent:pending?$('bible-tts-flow-status').textContent:!speech?'当前浏览器不支持朗读，正文仍可阅读。':!engine.voice?'当前浏览器未提供可用声音，可在“声音设置”中刷新或选择。':'';
+    $('reader-audio-stop').textContent=small.matches?'停止':'停止朗读';$('reader-audio-stop').setAttribute('aria-label','停止朗读');$('reader-audio-stop').disabled=!cancellable;$('reader-audio-stop').dataset.active=String(cancellable);
+    $('reader-audio-state').textContent=playing||paused?$('tts-status').textContent:pending?$('bible-tts-flow-status').textContent:'';
   }
   $('reader-audio-toggle').addEventListener('click',()=>{const engine=api.speech()?.engine;if(['playing','paused'].includes(engine?.state))$('tts-pause').click();else $('tts-play').click();});
   $('reader-audio-stop').addEventListener('click',()=>$('tts-stop').click());
@@ -157,6 +173,6 @@
   window.addEventListener('pagehide',savePosition);window.addEventListener('resize',sizeWorkspace);
   window.visualViewport?.addEventListener('resize',sizeWorkspace);
   const resize=new ResizeObserver(sizeWorkspace);for(const el of [document.querySelector('.site-header'),document.querySelector('.site-breadcrumb'),document.querySelector('.bible-titlebar')])if(el)resize.observe(el);
-  applyPrefs();showControls(controlsOpen);showSaved();syncAudio();
+  applyPrefs();showControls(controlsOpen);syncFocusButton();showSaved();syncAudio();
   if(api.current()){current=api.current();busy=false;chapterGrid();updateProgress();}
 })();

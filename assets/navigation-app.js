@@ -168,7 +168,15 @@
       const resource=state.resources.find(x=>'resource-'+x.id===id);
       const unfiltered=!$('directory-search').value.trim()&&!$('favorites-only').checked&&keys.every(k=>$(k).value==='all');
       if(resource&&unfiltered){$('category').value=resource.category;render();try{const u=new URL(location.href);u.searchParams.set('category',resource.category);history.replaceState(null,'',u);}catch{}target=document.getElementById(id);}
-      else if(resource)$('search-hint').textContent='链接所指条目不在当前筛选结果内；请清除筛选后重新打开条目链接。';
+      else if(resource){
+        const rows=matches().filter(x=>$('category').value==='all'||x.resource.category===$('category').value);
+        const position=rows.findIndex(x=>x.resource.id===resource.id);
+        if(position>=0&&$('directory-search').value.trim()){
+          state.limit=Math.max(state.limit,Math.ceil((position+1)/60)*60);render();
+          try{const u=new URL(location.href);u.searchParams.set('shown',state.limit);history.replaceState(null,'',u);}catch{}
+          target=document.getElementById(id);
+        }else $('search-hint').textContent='链接所指条目不在当前筛选结果内；请清除筛选后重新打开条目链接。';
+      }
     }
     if (target) requestAnimationFrame(() => { target.focus({preventScroll: true}); target.scrollIntoView({block: 'start'}); });
   }
@@ -243,7 +251,7 @@
   window.addEventListener('storage', e => {
     if (e.key === historyKey || e.key === null) { try { const h = JSON.parse(e.key === null ? '[]' : e.newValue || '[]'); state.history = Array.isArray(h) ? h.filter(x => typeof x === 'string' && x.length <= 240).slice(0, 8) : []; } catch { state.history = []; } historyRender(); }
     if (e.key !== null && e.key !== 'messiah-favorites-v1') return;
-    try { const ids = JSON.parse(e.newValue || '[]'); state.favorites = new Set(Array.isArray(ids) ? ids.filter(x => typeof x === 'string' && state.resources.some(r => r.id === x)) : []); } catch { state.favorites = new Set(); } render();
+    try { const ids = JSON.parse(e.newValue || '[]'); state.favorites = new Set(Array.isArray(ids) ? ids.filter(x => typeof x === 'string' && (!state.ready || state.resources.some(r => r.id === x))) : []); } catch { state.favorites = new Set(); } render();
   });
   if (matchMedia('(max-width: 850px)').matches) $('category-menu').open = false;
   restore(); historyRender();
